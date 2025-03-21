@@ -21,7 +21,7 @@ tasks:
       - uv run pre-commit autoupdate
 
   run:
-    dir: lasso_select_demo
+    dir: clerk_api_demo
     cmds:
       - uv run reflex run
 

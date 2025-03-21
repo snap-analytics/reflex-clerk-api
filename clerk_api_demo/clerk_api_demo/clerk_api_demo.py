@@ -48,6 +48,7 @@ def index() -> rx.Component:
                 "This is intended to be roughly a drop-in replacement of `kroo/reflex-clerk` as that repository is no longer maintained."
             ),
             rx.text("Note that everything above here is NOT inside the ClerkProvider."),
+            rx.button("Dev reset", on_click=clerk.ClerkState.dev_reset),
             rx.divider(),
             rx.text(
                 "Test your custom component by editing ",
@@ -100,5 +101,6 @@ def index() -> rx.Component:
 
 # Add state and page to the app.
 app = rx.App()
-# app.add_page(index, on_load=clerk.on_load([State.do_something_on_load]))
-app.add_page(index, on_load=State.do_something_on_load)
+# NOTE: Use the `clerk.on_load` to ensure that the ClerkState is updated *before* any other on_load events are run.
+#  The `ClerkState` is updated by an event sent from the frontend that is not guaranteed to run before the reflex on_load events.
+app.add_page(index, on_load=clerk.on_load([State.do_something_on_load]))

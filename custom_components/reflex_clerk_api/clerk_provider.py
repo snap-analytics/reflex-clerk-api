@@ -38,7 +38,7 @@ class ClerkState(rx.State):
     _on_load_events: ClassVar[dict[uuid.UUID, EventType[()]]] = {}
     _client: ClassVar[Clerk | None] = None
     # NOTE: Underscore only is still stored in state but is private
-    _jwk_keys: dict[str, Any] = {}
+    _jwk_keys: dict[str, Any] | None = None
 
     @classmethod
     def set_secret_key(cls, secret_key: str) -> None:

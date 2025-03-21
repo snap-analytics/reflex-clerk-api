@@ -169,3 +169,4 @@ app = rx.App()
 # NOTE: Use the `clerk.on_load` to ensure that the ClerkState is updated *before* any other on_load events are run.
 #  The `ClerkState` is updated by an event sent from the frontend that is not guaranteed to run before the reflex on_load events.
 app.add_page(index, on_load=clerk.on_load([State.do_something_on_load]))
+clerk.add_sign_in_page(app)

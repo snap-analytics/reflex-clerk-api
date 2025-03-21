@@ -35,8 +35,8 @@ where = ["custom_components"]
 venvPath = "."
 venv = ".venv"
 
-[tool.ruff]
-extend-select = ["I"]
+[tool.ruff.lint]
+extend-select = ["I", "RUF"]
 
 [dependency-groups]
 dev = [

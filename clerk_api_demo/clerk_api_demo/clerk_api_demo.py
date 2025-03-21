@@ -128,6 +128,23 @@ def signed_out_area() -> rx.Component:
     )
 
 
+def links_to_demo_pages() -> rx.Component:
+    return rx.fragment(
+        clerk.signed_out(
+            rx.grid(
+                rx.link(rx.button("Go to sign up page", width="100%"), href="/sign-up"),
+                rx.link(rx.button("Go to sign in page", width="100%"), href="/sign-in"),
+                width="100%",
+                columns="2",
+                spacing="3",
+            )
+        ),
+        clerk.signed_in(
+            rx.text("Sign out to see links to demo sign-in and sign-up pages.")
+        ),
+    )
+
+
 def index() -> rx.Component:
     return clerk.clerk_provider(
         rx.center(
@@ -139,6 +156,7 @@ def index() -> rx.Component:
                     current_clerk_state_values(),
                     on_load_demo(),
                 ),
+                rx.divider(),
                 clerk.clerk_loading(
                     rx.text("Clerk is loading..."),
                     rx.spinner(size="3"),
@@ -154,6 +172,8 @@ def index() -> rx.Component:
                         align="center",
                     ),
                 ),
+                rx.divider(),
+                links_to_demo_pages(),
                 align="center",
                 spacing="7",
             ),
@@ -170,3 +190,4 @@ app = rx.App()
 #  The `ClerkState` is updated by an event sent from the frontend that is not guaranteed to run before the reflex on_load events.
 app.add_page(index, on_load=clerk.on_load([State.do_something_on_load]))
 clerk.add_sign_in_page(app)
+clerk.add_sign_up_page(app)

@@ -7,13 +7,14 @@ from .control_components import (
     signed_in,
     signed_out,
 )
-from .pages import add_sign_in_page
+from .pages import add_sign_in_page, add_sign_up_page
 from .unstyled_components import SignInButton, sign_in_button, sign_out_button
 
 __all__ = [
     "ClerkState",
     "SignInButton",
     "add_sign_in_page",
+    "add_sign_up_page",
     "clerk_loaded",
     "clerk_loading",
     "clerk_provider",

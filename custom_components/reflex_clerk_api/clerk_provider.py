@@ -100,8 +100,9 @@ class ClerkState(rx.State):
     async def wait_for_auth_check(self, uid: uuid.UUID | str) -> EventType:
         """Wait for the Clerk authentication to complete (event sent from frontend).
 
-        Can't just use a blocking wait_for_auth_check because we are really waiting for the frontend event trigger to run,
-        so we need to not block that while we wait.
+        Can't just use a blocking wait_for_auth_check because we are really waiting for the frontend event trigger to run, so we need to not block that while we wait.
+
+        This can then return on_load events once auth_checked is True.
         """
         uid = uuid.UUID(uid) if isinstance(uid, str) else uid
         logging.debug(f"Waiting for auth check: {uid} ({type(uid)})")
@@ -113,7 +114,7 @@ class ClerkState(rx.State):
                     uid, [rx.toast.info("Auth check complete (no on_loads)!")]
                 )
             logging.debug("...sleeping...")
-            # TODO: Ideally wait on some event instead of sleeping
+            # TODO: Ideally, wait on some event instead of sleeping
             await asyncio.sleep(0.05)
         logging.debug("Auth check timed out")
         return rx.toast.error("Auth check timed out!")
@@ -131,7 +132,7 @@ class ClerkState(rx.State):
 class ClerkSessionSynchronizer(rx.Component):
     """ClerkSessionSynchronizer component.
 
-    This is borrowed directly from "kroo/reflex-clerk".
+    This is slightly adapted from Elliot Kroo's reflex-clerk.
     """
 
     tag = "ClerkSessionSynchronizer"

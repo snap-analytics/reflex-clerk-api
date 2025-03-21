@@ -1,4 +1,4 @@
-from .clerk_api import ClerkApi, clerk_api
+from .clerk_provider import clerk_provider
 
 
-__all__ = ["ClerkApi", "clerk_api"]
+__all__ = ["clerk_provider"]

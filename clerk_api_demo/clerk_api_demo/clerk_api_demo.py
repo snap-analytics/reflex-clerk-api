@@ -74,6 +74,14 @@ def index() -> rx.Component:
                         margin_top="1em",
                     ),
                 ),
+                clerk.signed_in(
+                    "You are signed in.",
+                    clerk.sign_out_button(rx.button("Sign out")),
+                ),
+                clerk.signed_out(
+                    "You are signed out.",
+                    clerk.sign_in_button(rx.button("Sign in")),
+                ),
                 publishable_key=os.environ["CLERK_PUBLISHABLE_KEY"],
                 secret_key=os.environ["CLERK_SECRET_KEY"],
             ),

@@ -4,14 +4,7 @@
 
 import reflex as rx
 from reflex.event import EventType
-
-# Some libraries you want to wrap may require dynamic imports.
-# This is because they they may not be compatible with Server-Side Rendering (SSR).
-# To handle this in Reflex, all you need to do is subclass `NoSSRComponent` instead.
-# For example:
-# from reflex.components.component import NoSSRComponent
-# class ClerkApi(NoSSRComponent):
-#     pass
+from reflex_clerk_api.base import ClerkBase
 
 
 class ClerkState(rx.State):
@@ -23,22 +16,11 @@ class ClerkState(rx.State):
     I.e., has Clerk sent a response to the frontend yet."""
 
 
-class ClerkProvider(rx.Component):
+class ClerkProvider(ClerkBase):
     """ClerkProvider component."""
-
-    # The React library to wrap.
-    library = "@clerk/clerk-react"
 
     # The React component tag.
     tag = "ClerkProvider"
-
-    # If the tag is the default export from the module, you must set is_default = True.
-    # This is normally used when components don't have curly braces around them when importing.
-    # is_default = True
-
-    # If you are wrapping another components with the same tag as a component in your project
-    # you can use aliases to differentiate between them and avoid naming conflicts.
-    # alias = "OtherClerkApi"
 
     # The props of the React component.
     # Note: when Reflex compiles the component to Javascript,
@@ -47,21 +29,12 @@ class ClerkProvider(rx.Component):
     # some_prop: rx.Var[str] = "some default value"
     # some_other_prop: rx.Var[int] = 1
 
-    # By default Reflex will install the library you have specified in the library property.
-    # However, sometimes you may need to install other libraries to use a component.
-    # In this case you can use the lib_dependencies property to specify other libraries to install.
-    # lib_dependencies: list[str] = []
-
     # Event triggers declaration if any.
     # Below is equivalent to merging `{ "on_change": lambda e: [e] }`
     # onto the default event triggers of parent/base Component.
     # The function defined for the `on_change` trigger maps event for the javascript
     # trigger to what will be passed to the backend event handler function.
     # on_change: rx.EventHandler[lambda e: [e]]
-
-    # To add custom code to your component
-    # def _get_custom_code(self) -> str:
-    #     return "const customCode = 'customCode';"
 
     publishable_key: str
     """
@@ -70,8 +43,10 @@ class ClerkProvider(rx.Component):
 
     @classmethod
     def create(cls, *children, **props) -> "ClerkProvider":
-        assert "publishable_key" in props, "publishable_key is required."
         return super().create(*children, **props)
+
+    def add_custom_code(self) -> list[str]:
+        return []
 
 
 def on_load(on_load_events: EventType[()] | None) -> EventType[()] | None:

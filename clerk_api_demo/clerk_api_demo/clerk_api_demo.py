@@ -50,6 +50,7 @@ def header_and_description() -> rx.Component:
         rx.text(
             "This is intended to be roughly a drop-in replacement of `kroo/reflex-clerk` as that repository is no longer maintained."
         ),
+        rx.divider(),
         rx.text("Additionally, this implementation:"),
         rx.unordered_list(
             rx.list_item("uses Clerk's maintained python backend api"),
@@ -57,6 +58,20 @@ def header_and_description() -> rx.Component:
             rx.list_item("fully supports reflex 0.7.x"),
             rx.list_item(
                 "includes a helper for handling `on_load` events (ensuring the ClerkState is updated before other on_load events)"
+            ),
+        ),
+        rx.divider(),
+        rx.text("Migration notes:"),
+        rx.unordered_list(
+            rx.list_item(
+                rx.markdown(
+                    "use `clerk.add_sign_in_page(...)` and `clerk.add_sign_up_page(...)` instead of `clerk.install_pages(...)`"
+                )
+            ),
+            rx.list_item(
+                rx.markdown(
+                    "wrap `on_load` events with `clerk.on_load(<on_load_events>)` to ensure the ClerkState is updated before other on_load events (i.e. is_signed_in will be accurate)"
+                )
             ),
         ),
     )

@@ -41,30 +41,32 @@ class State(rx.State):
 
 
 def index() -> rx.Component:
-    return rx.center(
-        rx.vstack(
-            rx.heading("reflex-clerk-api demo", size="9"),
-            rx.heading(
-                "This demonstrates the ClerkAPI component (wrapping `@clerk/clerk-react`).",
-                size="4",
-            ),
-            rx.text(
-                "This is intended to be roughly a drop-in replacement of `kroo/reflex-clerk` as that repository is no longer maintained."
-            ),
-            rx.text("Note that everything above here is NOT inside the ClerkProvider."),
-            rx.button("Dev reset", on_click=clerk.ClerkState.dev_reset),
-            rx.divider(),
-            rx.text(
-                "Test your custom component by editing ",
-                rx.code(filename),
-                font_size="2em",
-            ),
-            clerk.clerk_provider(
-                rx.vstack(
-                    rx.text("Everything inside here is inside the ClerkProvider."),
-                    width="100%",
-                    border="1px solid green",
-                    border_radius="10px",
+    return clerk.clerk_provider(
+        rx.center(
+            rx.vstack(
+                rx.heading("reflex-clerk-api demo", size="9"),
+                rx.heading(
+                    "This demonstrates the ClerkAPI component (wrapping `@clerk/clerk-react`).",
+                    size="4",
+                ),
+                rx.text(
+                    "This is intended to be roughly a drop-in replacement of `kroo/reflex-clerk` as that repository is no longer maintained."
+                ),
+                rx.text("Additionally, this implementation:"),
+                rx.unordered_list(
+                    rx.list_item("uses Clerk's maintained python backend api"),
+                    rx.list_item("uses async/await for requests to Clerk"),
+                    rx.list_item("fully supports reflex 0.7.x"),
+                    rx.list_item(
+                        "includes a helper for handling `on_load` events (ensuring the ClerkState is updated before other on_load events)"
+                    ),
+                ),
+                rx.button("Dev reset", on_click=clerk.ClerkState.dev_reset),
+                rx.divider(),
+                rx.text(
+                    "Test your custom component by editing ",
+                    rx.code(filename),
+                    font_size="2em",
                 ),
                 rx.card(
                     rx.text("What the state saw during it's on_load event:"),
@@ -93,13 +95,13 @@ def index() -> rx.Component:
                     "You are signed out.",
                     clerk.sign_in_button(rx.button("Sign in")),
                 ),
-                publishable_key=os.environ["CLERK_PUBLISHABLE_KEY"],
-                secret_key=os.environ["CLERK_SECRET_KEY"],
+                align="center",
+                spacing="7",
             ),
-            align="center",
-            spacing="7",
+            height="100vh",
         ),
-        height="100vh",
+        publishable_key=os.environ["CLERK_PUBLISHABLE_KEY"],
+        secret_key=os.environ["CLERK_SECRET_KEY"],
     )
 
 

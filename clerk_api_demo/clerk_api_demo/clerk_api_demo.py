@@ -17,13 +17,17 @@ filename = f"{config.app_name}/{config.app_name}.py"
 class State(rx.State):
     """The app state."""
 
+    info_from_load: str = "Nothing yet."
+
     @rx.event
     async def do_something_on_load(self) -> EventType:
-        return rx.toast.info(f"""
+        clerk_state = await self.get_state(clerk.ClerkState)
+        self.info_from_load = f"""\
         State.is_hydrated: {self.is_hydrated}
-        ClerkState.auth_checked: {clerk.ClerkState.auth_checked}
-        ClerkState.is_logged_in: {clerk.ClerkState.is_logged_in}
-        """)
+        ClerkState.auth_checked: {clerk_state.auth_checked}
+        ClerkState.is_logged_in: {clerk_state.is_logged_in}
+        """
+        return rx.toast.info("Loaded!")
 
 
 def index() -> rx.Component:
@@ -51,9 +55,25 @@ def index() -> rx.Component:
                     border="1px solid green",
                     border_radius="10px",
                 ),
-                # rx.text(f"""State.is_hydrated: {State.is_hydrated},
-                #         ClerkState.auth_checked: {clerk.ClerkState.auth_checked},
-                #         ClerkState.is_logged_in: {clerk.ClerkState.is_logged_in}"""),
+                rx.card(
+                    rx.text("What the state saw during it's on_load event:"),
+                    rx.text(
+                        State.info_from_load,
+                        read_only=True,
+                        white_space="pre-line",
+                        margin_top="1em",
+                    ),
+                ),
+                rx.card(
+                    rx.text("What the current values are:"),
+                    rx.text(
+                        f"""State.is_hydrated: {State.is_hydrated},
+                        ClerkState.auth_checked: {clerk.ClerkState.auth_checked},
+                        ClerkState.is_logged_in: {clerk.ClerkState.is_logged_in}""",
+                        white_space="pre-line",
+                        margin_top="1em",
+                    ),
+                ),
                 publishable_key=os.environ["CLERK_PUBLISHABLE_KEY"],
                 secret_key=os.environ["CLERK_SECRET_KEY"],
             ),
@@ -67,4 +87,4 @@ def index() -> rx.Component:
 # Add state and page to the app.
 app = rx.App()
 # app.add_page(index, on_load=clerk.on_load([State.do_something_on_load]))
-app.add_page(index)
+app.add_page(index, on_load=State.do_something_on_load)

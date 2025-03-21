@@ -34,6 +34,7 @@ venv = ".venv"
 [dependency-groups]
 dev = [
     "coverage>=7.6.12",
+    "dotenv>=0.9.9",
     "pre-commit>=4.1.0",
     "pyright>=1.1.396",
     "pytest>=8.3.5",

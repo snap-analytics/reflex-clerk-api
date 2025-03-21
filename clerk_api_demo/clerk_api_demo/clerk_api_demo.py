@@ -1,10 +1,15 @@
 """Welcome to Reflex! This file showcases the custom component in a basic app."""
 
+from reflex.event import EventType
 from rxconfig import config
+import os
 
 import reflex as rx
 
 import reflex_clerk_api as clerk
+from dotenv import load_dotenv
+
+load_dotenv()
 
 filename = f"{config.app_name}/{config.app_name}.py"
 
@@ -12,7 +17,13 @@ filename = f"{config.app_name}/{config.app_name}.py"
 class State(rx.State):
     """The app state."""
 
-    pass
+    @rx.event
+    async def do_something_on_load(self) -> EventType:
+        return rx.toast.info(f"""
+        State.is_hydrated: {self.is_hydrated}
+        ClerkState.auth_checked: {clerk.ClerkState.auth_checked}
+        ClerkState.is_logged_in: {clerk.ClerkState.is_logged_in}
+        """)
 
 
 def index() -> rx.Component:
@@ -40,6 +51,11 @@ def index() -> rx.Component:
                     border="1px solid green",
                     border_radius="10px",
                 ),
+                # rx.text(f"""State.is_hydrated: {State.is_hydrated},
+                #         ClerkState.auth_checked: {clerk.ClerkState.auth_checked},
+                #         ClerkState.is_logged_in: {clerk.ClerkState.is_logged_in}"""),
+                publishable_key=os.environ["CLERK_PUBLISHABLE_KEY"],
+                secret_key=os.environ["CLERK_SECRET_KEY"],
             ),
             align="center",
             spacing="7",
@@ -50,4 +66,5 @@ def index() -> rx.Component:
 
 # Add state and page to the app.
 app = rx.App()
+# app.add_page(index, on_load=clerk.on_load([State.do_something_on_load]))
 app.add_page(index)

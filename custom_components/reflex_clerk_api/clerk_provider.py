@@ -1,15 +1,21 @@
 import asyncio
-from typing import ClassVar, Any
+import logging
+import os
 import time
 import uuid
-from clerk_backend_api import Clerk
-from authlib.jose import JoseError, jwt, JWTClaims
+from typing import Any, ClassVar
 
 import reflex as rx
+from authlib.jose import JoseError, JWTClaims, jwt
+from clerk_backend_api import Clerk
 from reflex.event import EventType
 from reflex.utils.imports import ImportTypes
+
 from reflex_clerk_api.base import ClerkBase
-import logging
+
+
+class MissingSecretKeyError(Exception):
+    pass
 
 
 class ClerkState(rx.State):
@@ -51,9 +57,15 @@ class ClerkState(rx.State):
 
     @classmethod
     def set_client(cls) -> None:
-        if cls._secret_key is None:
-            raise ValueError("Clerk secret_key must be set before creating the client.")
-        client = Clerk(bearer_auth=cls._secret_key)
+        if cls._secret_key:
+            secret_key = cls._secret_key
+        else:
+            if "CLERK_SECRET_KEY" not in os.environ:
+                raise MissingSecretKeyError(
+                    "CLERK_SECRET_KEY either needs to be passed into clerk_provider(...) or set as an environment variable."
+                )
+            secret_key = os.environ["CLERK_SECRET_KEY"]
+        client = Clerk(bearer_auth=secret_key)
         cls._client = client
 
     @property
@@ -228,14 +240,16 @@ def on_load(on_load_events: EventType[()] | None) -> EventType[()] | None:
 
 
 def clerk_provider(
-    *children, publishable_key: str, secret_key: str, **props
+    *children, publishable_key: str, secret_key: str | None = None, **props
 ) -> rx.Component:
     """
 
     Args:
         secret_key: Your Clerk app's Secret Key, which you can find in the Clerk Dashboard. It will be prefixed with sk_test_ in development instances and sk_live_ in production instances. Do not expose this on the frontend with a public environment variable.
     """
-    ClerkState.set_secret_key(secret_key)
+    if secret_key:
+        ClerkState.set_secret_key(secret_key)
+
     return ClerkProvider.create(
         ClerkSessionSynchronizer.create(*children),
         publishable_key=publishable_key,

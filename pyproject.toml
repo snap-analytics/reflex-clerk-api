@@ -35,6 +35,9 @@ where = ["custom_components"]
 venvPath = "."
 venv = ".venv"
 
+[tool.ruff]
+extend-select = ["I"]
+
 [dependency-groups]
 dev = [
     "coverage>=7.6.12",

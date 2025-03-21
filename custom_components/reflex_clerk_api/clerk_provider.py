@@ -1,10 +1,10 @@
-"""Reflex custom component ClerkProvider."""
-
-# For wrapping react guide, visit https://reflex.dev/docs/wrapping-react/overview/
+from typing import ClassVar
 
 import reflex as rx
 from reflex.event import EventType
+from reflex.utils.imports import ImportTypes
 from reflex_clerk_api.base import ClerkBase
+import logging
 
 
 class ClerkState(rx.State):
@@ -14,6 +14,78 @@ class ClerkState(rx.State):
     auth_checked: bool = False
     """Whether the auth state of the user has been checked yet.
     I.e., has Clerk sent a response to the frontend yet."""
+
+    _secret_key: ClassVar[str | None] = None
+    """The Clerk secret_key set during clerk_provider creation."""
+
+    @classmethod
+    def set_secret_key(cls, secret_key: str) -> None:
+        if not secret_key:
+            raise ValueError("secret_key must be set (and not empty)")
+        cls._secret_key = secret_key
+
+    @rx.event
+    def set_clerk_session(self, token: str) -> None:
+        logging.debug("Setting Clerk session")
+        self.is_logged_in = True
+        self.auth_checked = True
+        return rx.toast.success("Logged in!")
+
+    @rx.event
+    def clear_clerk_session(self) -> None:
+        logging.debug("Clearing Clerk session")
+        self.is_logged_in = False
+        self.auth_checked = True
+        return rx.toast.success("Logged out!")
+
+
+class ClerkSessionSynchronizer(rx.Component):
+    """ClerkSessionSynchronizer component.
+
+    This is borrowed directly from "kroo/reflex-clerk".
+    """
+
+    tag = "ClerkSessionSynchronizer"
+
+    def add_imports(
+        self,
+    ) -> rx.ImportDict:
+        addl_imports: dict[str, ImportTypes] = {
+            "@clerk/clerk-react": ["useAuth"],
+            "react": ["useContext", "useEffect"],
+            "/utils/context": ["EventLoopContext"],
+            "/utils/state": ["Event"],
+        }
+        return addl_imports
+
+    def add_custom_code(self) -> list[str]:
+        clerk_state_name = ClerkState.get_full_name()
+
+        return [
+            """
+function ClerkSessionSynchronizer({ children }) {
+  const { getToken, isLoaded, isSignedIn } = useAuth()
+  const [ addEvents, connectErrors ] = useContext(EventLoopContext)
+
+  useEffect(() => {
+      if (isLoaded && !!addEvents) {
+        if (isSignedIn) {
+          getToken().then(token => {
+            addEvents([Event("%s.set_clerk_session", {token})])
+          })
+        } else {
+          addEvents([Event("%s.clear_clerk_session")])
+        }
+      }
+  }, [isSignedIn])
+
+  return (
+      <>{children}</>
+  )
+}
+"""
+            % (clerk_state_name, clerk_state_name)
+        ]
 
 
 class ClerkProvider(ClerkBase):
@@ -55,12 +127,15 @@ def on_load(on_load_events: EventType[()] | None) -> EventType[()] | None:
 
 def clerk_provider(
     *children, publishable_key: str, secret_key: str, **props
-) -> ClerkProvider:
+) -> rx.Component:
     """
 
     Args:
         secret_key: Your Clerk app's Secret Key, which you can find in the Clerk Dashboard. It will be prefixed with sk_test_ in development instances and sk_live_ in production instances. Do not expose this on the frontend with a public environment variable.
     """
-    # TODO: Do something with secret key
-    _ = secret_key
-    return ClerkProvider.create(*children, publishable_key=publishable_key, **props)
+    ClerkState.set_secret_key(secret_key)
+    return ClerkProvider.create(
+        ClerkSessionSynchronizer.create(*children),
+        publishable_key=publishable_key,
+        **props,
+    )

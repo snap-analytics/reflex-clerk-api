@@ -3,11 +3,17 @@
 from reflex.event import EventType
 from rxconfig import config
 import os
+import logging
 
 import reflex as rx
 
 import reflex_clerk_api as clerk
 from dotenv import load_dotenv
+
+# Set up debug logging with a console handler
+logging.basicConfig(level=logging.DEBUG, handlers=[logging.StreamHandler()])
+logging.debug("Logging is set up.")
+
 
 load_dotenv()
 

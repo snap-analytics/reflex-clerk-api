@@ -1,15 +1,14 @@
 """Welcome to Reflex! This file showcases the custom component in a basic app."""
 
-from reflex.event import EventType
-from rxconfig import config
-import os
 import logging
+import os
 from textwrap import dedent
 
 import reflex as rx
-
 import reflex_clerk_api as clerk
 from dotenv import load_dotenv
+from reflex.event import EventType
+from rxconfig import config
 
 # Set up debug logging with a console handler
 logging.basicConfig(level=logging.DEBUG, handlers=[logging.StreamHandler()])
@@ -140,10 +139,20 @@ def index() -> rx.Component:
                     current_clerk_state_values(),
                     on_load_demo(),
                 ),
-                rx.grid(
-                    signed_in_area(),
-                    signed_out_area(),
-                    columns="2",
+                clerk.clerk_loading(
+                    rx.text("Clerk is loading..."),
+                    rx.spinner(size="3"),
+                ),
+                clerk.clerk_loaded(
+                    rx.vstack(
+                        rx.text("Clerk is loaded!"),
+                        rx.grid(
+                            signed_in_area(),
+                            signed_out_area(),
+                            columns="2",
+                        ),
+                        align="center",
+                    ),
                 ),
                 align="center",
                 spacing="7",

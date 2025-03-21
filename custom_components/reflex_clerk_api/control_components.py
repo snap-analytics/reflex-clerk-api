@@ -41,5 +41,13 @@ class SignedOut(ClerkBase):
     tag = "SignedOut"
 
 
+clerk_loaded = ClerkLoaded.create
+clerk_loading = ClerkLoading.create
+protect = Protect.create
+redirect_to_sign_in = RedirectToSignIn.create
+redirect_to_sign_up = RedirectToSignUp.create
+redirect_to_user_profile = RedirectToUserProfile.create
+redirect_to_organization_profile = RedirectToOrganizationProfile.create
+redirect_to_create_organization = RedirectToCreateOrganization.create
 signed_in = SignedIn.create
 signed_out = SignedOut.create

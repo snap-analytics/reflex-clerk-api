@@ -30,10 +30,14 @@ class State(rx.State):
         clerk_state = await self.get_state(clerk.ClerkState)
         self.info_from_load = f"""\
         State.is_hydrated: {self.is_hydrated}
-        ClerkState.auth_checked: {clerk_state.auth_checked}
-        ClerkState.is_logged_in: {clerk_state.is_logged_in}
+        clerkstate.auth_checked: {clerk_state.auth_checked}
+        ClerkState.is_logged_in: {clerk_state.is_signed_in}
         """
         return rx.toast.info("Loaded!")
+
+    @rx.var
+    def hidden_value(self) -> int:
+        return self._temp
 
 
 def index() -> rx.Component:
@@ -76,7 +80,7 @@ def index() -> rx.Component:
                     rx.text(
                         f"""State.is_hydrated: {State.is_hydrated},
                         ClerkState.auth_checked: {clerk.ClerkState.auth_checked},
-                        ClerkState.is_logged_in: {clerk.ClerkState.is_logged_in}""",
+                        ClerkState.is_logged_in: {clerk.ClerkState.is_signed_in}""",
                         white_space="pre-line",
                         margin_top="1em",
                     ),

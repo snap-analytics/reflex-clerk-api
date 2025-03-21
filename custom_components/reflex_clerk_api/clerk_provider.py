@@ -1,7 +1,9 @@
 import asyncio
-from typing import ClassVar
+from typing import ClassVar, Any
 import time
 import uuid
+from clerk_backend_api import Clerk
+from authlib.jose import JoseError, jwt, JWTClaims
 
 import reflex as rx
 from reflex.event import EventType
@@ -11,19 +13,26 @@ import logging
 
 
 class ClerkState(rx.State):
-    is_logged_in: bool = False
+    is_signed_in: bool = False
     """Whether the user is logged in."""
 
     auth_checked: bool = False
     """Whether the auth state of the user has been checked yet.
     I.e., has Clerk sent a response to the frontend yet."""
 
-    # NOTE: Reflex treats variables with a leading underscore as private, but does still include them in the state.
+    claims: JWTClaims | None = None
+    """The JWT claims of the user, if they are logged in."""
+    user_id: str | None = None
+    """The clerk user ID of the user, if they are logged in."""
+
+    # NOTE: ClassVar tells reflex it doesn't need to include these in the persisted state.
+    _auth_wait_timeout_seconds: ClassVar[float] = 1.0
     _secret_key: ClassVar[str | None] = None
     """The Clerk secret_key set during clerk_provider creation."""
-    _auth_wait_timeout_seconds: float = 1.0
-    # NOTE: ClassVar is used to tell Reflex not to sync this variable with state at all.
     _on_load_events: ClassVar[dict[uuid.UUID, EventType[()]]] = {}
+    _client: ClassVar[Clerk | None] = None
+    # NOTE: Underscore only is still stored in state but is private
+    _jwk_keys: dict[str, Any] = {}
 
     @classmethod
     def set_secret_key(cls, secret_key: str) -> None:
@@ -40,17 +49,50 @@ class ClerkState(rx.State):
     def set_auth_wait_timeout_seconds(cls, seconds: float) -> None:
         cls._auth_wait_timeout_seconds = seconds
 
+    @classmethod
+    def set_client(cls) -> None:
+        if cls._secret_key is None:
+            raise ValueError("Clerk secret_key must be set before creating the client.")
+        client = Clerk(bearer_auth=cls._secret_key)
+        cls._client = client
+
+    @property
+    def client(self) -> Clerk:
+        if self._client is None:
+            self.set_client()
+        assert self._client is not None
+        return self._client
+
     @rx.event
-    def set_clerk_session(self, token: str) -> None:
+    async def set_clerk_session(self, token: str) -> None:
         logging.debug("Setting Clerk session")
-        self.is_logged_in = True
+
+        if not self._jwk_keys:
+            # TODO: Could this be cached on the class instead of per instance?
+            jwks = await self.client.jwks.get_async()
+            assert jwks is not None
+            assert jwks.keys is not None
+            self._jwk_keys = jwks.model_dump()["keys"]
+
+        try:
+            decoded: JWTClaims = jwt.decode(token, {"keys": self._jwk_keys})
+            self.is_signed_in = True
+            self.claims = decoded
+            self.user_id = str(decoded.get("sub"))
+        except JoseError as e:
+            self.auth_error = e
+            logging.warning(f"JWT decode error: {e}")
+
+        self.is_signed_in = True
         self.auth_checked = True
         return rx.toast.success("Logged in!")
 
     @rx.event
     def clear_clerk_session(self) -> None:
         logging.debug("Clearing Clerk session")
-        self.is_logged_in = False
+        self.is_signed_in = False
+        self.claims = None
+        self.user_id = None
         self.auth_checked = True
         return rx.toast.success("Logged out!")
 
@@ -78,8 +120,11 @@ class ClerkState(rx.State):
 
     @rx.event
     def dev_reset(self) -> None:
-        self.is_logged_in = False
+        self.is_signed_in = False
         self.auth_checked = False
+        self.claims = None
+        self.user_id = None
+        self._jwk_keys = {}
         return rx.toast.success("Dev reset!")
 
 

@@ -186,7 +186,14 @@ class ClerkUser(rx.State):
 
     @rx.event
     async def load_user(self) -> None:
-        user: clerk_backend_api.models.User = await get_user(self)
+        try:
+            user: clerk_backend_api.models.User = await get_user(self)
+        except MissingUserError:
+            logging.debug("Clearing user state")
+            self.reset()
+            return
+
+        logging.debug("Updating user state")
         self.first_name = (
             user.first_name
             if user.first_name and user.first_name != clerk_backend_api.UNSET
@@ -205,7 +212,7 @@ class ClerkUser(rx.State):
         self.email_address = (
             user.email_addresses[0].email_address if user.email_addresses else ""
         )
-        self.has_image = True if user.image_url is True else False
+        self.has_image = True if user.has_image is True else False
         self.image_url = user.image_url or ""
 
 
@@ -353,6 +360,15 @@ async def get_user(current_state: rx.State) -> clerk_backend_api.models.User:
     return user
 
 
+def register_on_auth_change_handler(handler: EventCallback) -> None:
+    """Register a handler to be called any time the user logs in or out.
+
+    Args:
+        handler: The event handler function to be called.
+    """
+    ClerkState.register_dependent_handler(handler)
+
+
 def clerk_provider(
     *children,
     publishable_key: str,
@@ -361,15 +377,17 @@ def clerk_provider(
     **props,
 ) -> rx.Component:
     """
+    Create a ClerkProvider component to wrap your app/page that uses clerk authentication.
 
     Args:
         secret_key: Your Clerk app's Secret Key, which you can find in the Clerk Dashboard. It will be prefixed with sk_test_ in development instances and sk_live_ in production instances. Do not expose this on the frontend with a public environment variable.
     """
+    logging.critical("running clerk_provider")
     if secret_key:
         ClerkState.set_secret_key(secret_key)
 
     if register_user_state:
-        ClerkState.register_dependent_handler(ClerkUser.load_user)
+        register_on_auth_change_handler(ClerkUser.load_user)
 
     return ClerkProvider.create(
         ClerkSessionSynchronizer.create(*children),

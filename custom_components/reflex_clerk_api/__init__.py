@@ -1,5 +1,11 @@
 from .authentication_components import sign_in, sign_up
-from .clerk_provider import ClerkState, ClerkUser, clerk_provider, on_load
+from .clerk_provider import (
+    ClerkState,
+    ClerkUser,
+    clerk_provider,
+    on_load,
+    register_on_auth_change_handler,
+)
 from .control_components import (
     clerk_loaded,
     clerk_loading,
@@ -21,6 +27,7 @@ __all__ = [
     "clerk_provider",
     "on_load",
     "protect",
+    "register_on_auth_change_handler",
     "sign_in",
     "sign_in_button",
     "sign_out_button",

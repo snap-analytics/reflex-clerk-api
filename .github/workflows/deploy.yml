@@ -1,0 +1,69 @@
+name: Deploy Demo to VPS
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env
+        run: |
+          echo "DOMAIN=${{ vars.DOMAIN }}" > .env
+          echo "CLERK_PUBLISHABLE_KEY=${{ secrets.CLERK_PUBLISHABLE_KEY }}" >> .env
+          # echo "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" >> .env
+
+      - name: Deploy frontend
+        uses: TimChild/webserver-template/actions/deploy-reflex-frontend@main
+        with:
+          vps-ip: ${{ vars.VPS_IP }}
+          site-name: ${{ vars.SITE_NAME }}
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Remove .env
+        if: always()
+        run: rm .env
+
+  deploy-backend:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env
+        run: |
+          echo "DOMAIN=${{ vars.DOMAIN }}" > .env
+          echo "CLERK_PUBLISHABLE_KEY=${{ secrets.CLERK_PUBLISHABLE_KEY }}" >> .env
+          echo "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" >> .env
+
+      - name: Deploy backend
+        uses: TimChild/webserver-template/actions/deploy-reflex-backend@main
+        with:
+          vps-ip: ${{ vars.VPS_IP }}
+          site-name: ${{ vars.SITE_NAME }}
+          dotenv-path: .env
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Remove .env
+        if: always()
+        run: rm .env

@@ -1,3 +1,7 @@
+"""
+This provides some example code for adding dedicated sign-in and sign-up pages to your app.
+"""
+
 import os
 
 import reflex as rx

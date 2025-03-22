@@ -73,6 +73,14 @@ def header_and_description() -> rx.Component:
                     "wrap `on_load` events with `clerk.on_load(<on_load_events>)` to ensure the ClerkState is updated before other on_load events (i.e. is_signed_in will be accurate)"
                 )
             ),
+            rx.list_item(
+                rx.markdown(
+                    "use `await clerk.get_user()` inside event handlers instead of `clerk_state.user` to explicitly retrieve user information when desired"
+                )
+            ),
+            rx.list_item(
+                "Note that you can use the `clerk_backend_api` directly if desired (it is a dependency of this plugin anyway)"
+            ),
         ),
     )
 
@@ -160,6 +168,35 @@ def links_to_demo_pages() -> rx.Component:
     )
 
 
+def user_info_demo() -> rx.Component:
+    return rx.card(
+        rx.heading("Using user info demo", size="5"),
+        rx.markdown(
+            dedent("""\
+            User information can be retrieved within event handler methods.
+
+            To conveniently use the information within the frontend, you can use the `clerk.ClerkUser` state, or
+            add the user information to your own state.
+
+            Note: the `clerk.ClerkUser` only stores a subset of the user information.
+            """)
+        ),
+        clerk.signed_in(
+            rx.hstack(
+                rx.text(f"username: {clerk.ClerkUser.username}"),
+                rx.text(f"email: {clerk.ClerkUser.email_address}"),
+                rx.avatar(src=clerk.ClerkUser.image_url, fallback="No image", size="9"),
+                rx.cond(
+                    clerk.ClerkUser.has_image,
+                    rx.image(src=clerk.ClerkUser.image_url, width="50px"),
+                    rx.text("No image available"),
+                ),
+            ),
+        ),
+        clerk.signed_out(rx.text("Sign in to see user information.")),
+    )
+
+
 def index() -> rx.Component:
     return clerk.clerk_provider(
         rx.center(
@@ -188,6 +225,8 @@ def index() -> rx.Component:
                     ),
                 ),
                 rx.divider(),
+                user_info_demo(),
+                rx.divider(),
                 links_to_demo_pages(),
                 align="center",
                 spacing="7",
@@ -195,6 +234,7 @@ def index() -> rx.Component:
             height="100vh",
         ),
         publishable_key=os.environ["CLERK_PUBLISHABLE_KEY"],
+        register_user_state=True,
         secret_key=os.environ["CLERK_SECRET_KEY"],
     )
 

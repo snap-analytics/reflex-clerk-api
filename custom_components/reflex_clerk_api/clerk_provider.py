@@ -3,18 +3,27 @@ import logging
 import os
 import time
 import uuid
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypeVar
 
+import clerk_backend_api
 import reflex as rx
 from authlib.jose import JoseError, JWTClaims, jwt
-from clerk_backend_api import Clerk
-from reflex.event import EventType
+from reflex.event import EventCallback, EventType
+from reflex.utils.exceptions import ImmutableStateError
 from reflex.utils.imports import ImportTypes
 
 from reflex_clerk_api.base import ClerkBase
 
 
-class MissingSecretKeyError(Exception):
+class ReflexClerkApiError(Exception):
+    pass
+
+
+class MissingSecretKeyError(ReflexClerkApiError):
+    pass
+
+
+class MissingUserError(ReflexClerkApiError):
     pass
 
 
@@ -36,14 +45,26 @@ class ClerkState(rx.State):
     _secret_key: ClassVar[str | None] = None
     """The Clerk secret_key set during clerk_provider creation."""
     _on_load_events: ClassVar[dict[uuid.UUID, EventType[()]]] = {}
-    _client: ClassVar[Clerk | None] = None
+    _dependent_handlers: ClassVar[dict[int, EventCallback]] = {}
+    _client: ClassVar[clerk_backend_api.Clerk | None] = None
     # NOTE: Underscore only is still stored in state but is private
     _jwk_keys: dict[str, Any] | None = None
 
     @classmethod
+    def register_dependent_handler(cls, handler: EventCallback) -> None:
+        """Register a handler to be called any time this state updates.
+
+        I.e. Any events that should be triggered on login/logout.
+        """
+        assert isinstance(handler, rx.EventHandler)
+        hash_id = hash((handler.state_full_name, handler.fn))
+        logging.debug(f"Dependent hash_id: {hash_id}")
+        cls._dependent_handlers[hash_id] = handler
+
+    @classmethod
     def set_secret_key(cls, secret_key: str) -> None:
         if not secret_key:
-            raise ValueError("secret_key must be set (and not empty)")
+            raise MissingSecretKeyError("secret_key must be set (and not empty)")
         cls._secret_key = secret_key
 
     @classmethod
@@ -65,18 +86,18 @@ class ClerkState(rx.State):
                     "CLERK_SECRET_KEY either needs to be passed into clerk_provider(...) or set as an environment variable."
                 )
             secret_key = os.environ["CLERK_SECRET_KEY"]
-        client = Clerk(bearer_auth=secret_key)
+        client = clerk_backend_api.Clerk(bearer_auth=secret_key)
         cls._client = client
 
     @property
-    def client(self) -> Clerk:
+    def client(self) -> clerk_backend_api.Clerk:
         if self._client is None:
             self.set_client()
         assert self._client is not None
         return self._client
 
     @rx.event
-    async def set_clerk_session(self, token: str) -> None:
+    async def set_clerk_session(self, token: str) -> EventType:
         logging.debug("Setting Clerk session")
 
         if not self._jwk_keys:
@@ -97,16 +118,16 @@ class ClerkState(rx.State):
 
         self.is_signed_in = True
         self.auth_checked = True
-        return rx.toast.success("Logged in!")
+        return list(self._dependent_handlers.values())
 
     @rx.event
-    def clear_clerk_session(self) -> None:
+    def clear_clerk_session(self) -> EventType:
         logging.debug("Clearing Clerk session")
         self.is_signed_in = False
         self.claims = None
         self.user_id = None
         self.auth_checked = True
-        return rx.toast.success("Logged out!")
+        return list(self._dependent_handlers.values())
 
     @rx.event(background=True)
     async def wait_for_auth_check(self, uid: uuid.UUID | str) -> EventType:
@@ -139,6 +160,53 @@ class ClerkState(rx.State):
         self.user_id = None
         self._jwk_keys = {}
         return rx.toast.success("Dev reset!")
+
+
+class NotRegisteredError(ReflexClerkApiError):
+    pass
+
+
+class ClerkUser(rx.State):
+    """Convenience class for using Clerk User information.
+
+    This only contains a subset of the information available. Create your own state if you need more.
+
+    Note: For this to be updated on login/logout events, it must be registered on the ClerkState.
+    """
+
+    first_name: str = ""
+    last_name: str = ""
+    username: str = ""
+    email_address: str = ""
+    has_image: bool = False
+    image_url: str = ""
+
+    # Set to True when the state is registered on the ClerkState to avoid registering it multiple times.
+    _is_registered: ClassVar[bool] = False
+
+    @rx.event
+    async def load_user(self) -> None:
+        user: clerk_backend_api.models.User = await get_user(self)
+        self.first_name = (
+            user.first_name
+            if user.first_name and user.first_name != clerk_backend_api.UNSET
+            else ""
+        )
+        self.last_name = (
+            user.last_name
+            if user.last_name and user.last_name != clerk_backend_api.UNSET
+            else ""
+        )
+        self.username = (
+            user.username
+            if user.username and user.username != clerk_backend_api.UNSET
+            else ""
+        )
+        self.email_address = (
+            user.email_addresses[0].email_address if user.email_addresses else ""
+        )
+        self.has_image = True if user.image_url is True else False
+        self.image_url = user.image_url or ""
 
 
 class ClerkSessionSynchronizer(rx.Component):
@@ -239,8 +307,58 @@ def on_load(on_load_events: EventType[()] | None) -> EventType[()] | None:
     return [ClerkState.wait_for_auth_check(uid)]
 
 
+T = TypeVar("T", bound=rx.State)
+
+
+async def _get_state_within_handler(
+    current_state: rx.State, desired_state: type[T]
+) -> T:
+    """Get the desired state from within an event handler.
+
+    Note: Need to be in `async with self` block if called from background event.
+    """
+    try:
+        state = await current_state.get_state(desired_state)
+    except ImmutableStateError:
+        async with current_state:
+            state = await current_state.get_state(desired_state)
+    return state
+
+
+async def get_user(current_state: rx.State) -> clerk_backend_api.models.User:
+    """Get the User object from Clerk given the currently logged in user.
+
+    Note: Must be used within an event handler in order to get the appropriate clerk_state.
+
+    Args:
+        current_state: The `self` state from the current event handler.
+
+    Examples:
+
+    ```python
+    class State(rx.State):
+        @rx.event
+        async def handle_getting_user_email(self) -> EventType:
+            user = await clerk.get_user(self)
+            return rx.toast.info(f"User: {user.email}")
+    ```
+    """
+    clerk_state = await _get_state_within_handler(current_state, ClerkState)
+    user_id = clerk_state.user_id
+    if user_id is None:
+        raise MissingUserError("No user_id to get user for")
+    user = await clerk_state.client.users.get_async(user_id=user_id)
+    if user is None:
+        raise MissingUserError("No user found")
+    return user
+
+
 def clerk_provider(
-    *children, publishable_key: str, secret_key: str | None = None, **props
+    *children,
+    publishable_key: str,
+    secret_key: str | None = None,
+    register_user_state: bool = False,
+    **props,
 ) -> rx.Component:
     """
 
@@ -249,6 +367,9 @@ def clerk_provider(
     """
     if secret_key:
         ClerkState.set_secret_key(secret_key)
+
+    if register_user_state:
+        ClerkState.register_dependent_handler(ClerkUser.load_user)
 
     return ClerkProvider.create(
         ClerkSessionSynchronizer.create(*children),

@@ -1,9 +1,9 @@
 name: Deploy Demo to VPS
 
-# on:
-#   push:
-#     branches:
-#       - main
+on:
+  push:
+    branches:
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -13,7 +13,7 @@ jobs:
   deploy-frontend:
     runs-on: ubuntu-latest
     environment:
-      name: production
+      name: demo
     permissions:
       contents: read
 
@@ -23,7 +23,6 @@ jobs:
 
       - name: Create .env
         run: |
-          echo "DOMAIN=${{ vars.DOMAIN }}" > .env
           echo "CLERK_PUBLISHABLE_KEY=${{ secrets.CLERK_PUBLISHABLE_KEY }}" >> .env
           # echo "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" >> .env
 
@@ -33,6 +32,8 @@ jobs:
           vps-ip: ${{ vars.VPS_IP }}
           site-name: ${{ vars.SITE_NAME }}
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-user: "webadmin"
+          working-directory: clerk_api_demo
 
       - name: Remove .env
         if: always()
@@ -41,7 +42,7 @@ jobs:
   deploy-backend:
     runs-on: ubuntu-latest
     environment:
-      name: production
+      name: demo
     permissions:
       contents: read
       packages: write
@@ -52,7 +53,6 @@ jobs:
 
       - name: Create .env
         run: |
-          echo "DOMAIN=${{ vars.DOMAIN }}" > .env
           echo "CLERK_PUBLISHABLE_KEY=${{ secrets.CLERK_PUBLISHABLE_KEY }}" >> .env
           echo "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" >> .env
 
@@ -63,6 +63,8 @@ jobs:
           site-name: ${{ vars.SITE_NAME }}
           dotenv-path: .env
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-user: "webadmin"
+          working-directory: clerk_api_demo
 
       - name: Remove .env
         if: always()

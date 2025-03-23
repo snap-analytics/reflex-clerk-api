@@ -16,7 +16,6 @@ def add_sign_in_page(
     Adds a sign-in page that is customizable via the Clerk dashboard.
     """
     assert route.startswith("/")
-    route = route + "[/{redirect}]"
     publishable_key = publishable_key or os.environ["CLERK_PUBLISHABLE_KEY"]
 
     sign_in_page = clerk.clerk_provider(
@@ -30,7 +29,7 @@ def add_sign_in_page(
         ),
         publishable_key=publishable_key,
     )
-    app.add_page(sign_in_page, route=route)
+    app.add_page(sign_in_page, route=route + "/[[...signin]]")
 
 
 def add_sign_up_page(
@@ -40,7 +39,6 @@ def add_sign_up_page(
     Adds a sign-up page that is customizable via the Clerk dashboard.
     """
     assert route.startswith("/")
-    route = route + "[/{redirect}]"
     publishable_key = publishable_key or os.environ["CLERK_PUBLISHABLE_KEY"]
 
     sign_up_page = clerk.clerk_provider(
@@ -54,4 +52,4 @@ def add_sign_up_page(
         ),
         publishable_key=publishable_key,
     )
-    app.add_page(sign_up_page, route=route)
+    app.add_page(sign_up_page, route=route + "/[[...signup]]")

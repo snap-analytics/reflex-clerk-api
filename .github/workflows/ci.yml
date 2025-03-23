@@ -47,7 +47,7 @@ jobs:
 
       - name: Initialize Reflex
         run: uv run reflex init
-        working-directory: lasso_select_demo
+        working-directory: clerk_api_demo
 
       - name: Install playwright
         run: uv run playwright install

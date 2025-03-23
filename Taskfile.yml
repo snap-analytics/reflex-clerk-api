@@ -39,7 +39,7 @@ tasks:
 
   push-tag:
     cmds:
-      - uv run scripts/get-version.py pyproject.toml | xargs -I {} git tag -s v{} -m "Release v{}"
+      - uv run scripts/get-version.py pyproject.toml | xargs -I {} git tag -a v{} -m "Release v{}"
 
   pre-commit-all:
     cmds:

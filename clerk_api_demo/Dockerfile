@@ -15,9 +15,10 @@ RUN uv python install 3.13
 
 WORKDIR /app
 
+RUN uv venv
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
-    uv install --requirement requirements.txt
+    uv pip install -r requirements.txt
 
 COPY assets assets
 COPY clerk_api_demo clerk_api_demo

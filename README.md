@@ -2,7 +2,7 @@
 
 A Reflex custom component for integrating Clerk authentication into a Reflex application.
 
-See a demo of it in action [here](https://clerk-reflex-api.adventuresoftim.com).
+See a demo of it in action [here](https://reflex-clerk-api-demo.adventuresoftim.com).
 
 Documentation will soon be available [here](https://timchild.github.io/reflex-clerk-api/)
 

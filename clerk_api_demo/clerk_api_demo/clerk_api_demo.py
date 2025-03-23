@@ -349,7 +349,7 @@ def index() -> rx.Component:
         ),
         publishable_key=os.environ["CLERK_PUBLISHABLE_KEY"],
         register_user_state=True,
-        secret_key=os.environ["CLERK_SECRET_KEY"],
+        secret_key=os.environ.get("CLERK_SECRET_KEY"),
     )
 
 

@@ -19,14 +19,13 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-project --no-dev
 
+COPY requirements.txt .
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv install --requirement requirements.txt
+
 COPY assets assets
 COPY clerk_api_demo clerk_api_demo
-COPY pyproject.toml .
-COPY uv.lock .
 COPY rxconfig.py .
-
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
 
 # Then, use a final image without uv (note this also doesn't include python)
 FROM debian:bookworm-slim

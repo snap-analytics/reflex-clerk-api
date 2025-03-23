@@ -21,6 +21,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Check env vars set
+        run: |
+          if [ -z "${{ secrets.CLERK_PUBLISHABLE_KEY }}" ]; then
+            echo "CLERK_PUBLISHABLE_KEY is not set"
+            exit 1
+          fi
+
       - name: Create .env
         run: |
           echo "CLERK_PUBLISHABLE_KEY=${{ secrets.CLERK_PUBLISHABLE_KEY }}" >> .env
@@ -50,6 +57,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Check env vars set
+        run: |
+          if [ -z "${{ secrets.CLERK_PUBLISHABLE_KEY }}" ]; then
+            echo "CLERK_PUBLISHABLE_KEY is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.CLERK_SECRET_KEY }}" ]; then
+            echo "CLERK_SECRET_KEY is not set"
+            exit 1
+          fi
 
       - name: Create .env
         run: |

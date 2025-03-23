@@ -8,9 +8,38 @@ tasks:
       - uv sync --dev
       - uv run pre-commit install
 
+  run:
+    dir: clerk_api_demo
+    cmds:
+      - uv run reflex run
+
+  test:
+    cmds:
+      - uv run pytest
+
   lint:
     cmds:
       - uv run ruff check .
+
+  typecheck:
+    cmds:
+      - uv run pyright
+
+  bump-patch:
+    cmds:
+      - uv run scripts/bump-version.py patch pyproject.toml
+
+  bump-minor:
+    cmds:
+      - uv run scripts/bump-version.py patch pyproject.toml
+
+  bump-major:
+    cmds:
+      - uv run scripts/bump-version.py patch pyproject.toml
+
+  push-tag:
+    cmds:
+      - uv run scripts/get-version.py pyproject.toml | xargs -I {} git tag -s v{} -m "Release v{}"
 
   pre-commit-all:
     cmds:
@@ -19,19 +48,6 @@ tasks:
   pre-commit-update:
     cmds:
       - uv run pre-commit autoupdate
-
-  run:
-    dir: clerk_api_demo
-    cmds:
-      - uv run reflex run
-
-  typecheck:
-    cmds:
-      - uv run pyright
-
-  test:
-    cmds:
-      - uv run pytest
 
   publish:
     preconditions:

@@ -14,13 +14,9 @@ ENV UV_PYTHON_PREFERENCE=only-managed
 RUN uv python install 3.13
 
 WORKDIR /app
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-project --no-dev
 
-COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=requirements.txt,target=requirements.txt \
     uv install --requirement requirements.txt
 
 COPY assets assets

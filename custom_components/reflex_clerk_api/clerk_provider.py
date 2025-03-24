@@ -9,7 +9,7 @@ import authlib.jose.errors as jose_errors
 import clerk_backend_api
 import reflex as rx
 from authlib.jose import JWTClaims, jwt
-from reflex.event import EventCallback, EventType
+from reflex.event import EventCallback, EventType, IndividualEventType
 from reflex.utils.exceptions import ImmutableStateError
 from reflex.utils.imports import ImportTypes
 
@@ -51,7 +51,7 @@ class ClerkState(rx.State):
     _jwk_keys: ClassVar[dict[str, Any] | None] = None
     _last_jwk_reset: ClassVar[float] = 0.0
     _claims_options: ClassVar[dict[str, Any]] = {
-        "iss": {"value": "https://api.clerk.dev"},
+        # "iss": {"value": "https://<your-iss>.clerk.accounts.dev"},
         "exp": {"essential": True},
         "nbf": {"essential": True},
         # "azp": {"essential": False, "values": ["http://localhost:3000", "https://example.com"]},
@@ -76,6 +76,11 @@ class ClerkState(rx.State):
         Check ClerkState.auth_checked to see if auth check is complete.
         """
         cls._auth_wait_timeout_seconds = seconds
+
+    @classmethod
+    def set_claims_options(cls, claims_options: dict[str, Any]) -> None:
+        """Set the claims options for the JWT claims validation."""
+        cls._claims_options = claims_options
 
     @property
     def client(self) -> clerk_backend_api.Clerk:
@@ -358,9 +363,9 @@ class ClerkProvider(ClerkBase):
         return []
 
 
-def on_load(on_load_events: EventType[()] | None) -> EventType[()] | None:
+def on_load(on_load_events: EventType[()] | None) -> list[IndividualEventType[()]]:
     if on_load_events is None:
-        return None
+        return []
     on_load_list = (
         on_load_events if isinstance(on_load_events, list) else [on_load_events]
     )

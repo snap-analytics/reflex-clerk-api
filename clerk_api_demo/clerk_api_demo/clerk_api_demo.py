@@ -43,19 +43,20 @@ class State(rx.State):
         return rx.toast.info("On load event has finished")
 
     @rx.event
-    async def do_something_on_log_in_or_out(self) -> EventType:
+    async def do_something_on_log_in_or_out(self) -> EventType | None:
         """Demo handler that should run on user login or logout.
 
         To make this run it is registered via
         `clerk.register_on_auth_change_handler(State.do_something_on_log_in_or_out)`
         """
         clerk_state = await self.get_state(clerk.ClerkState)
-        if clerk_state.is_signed_in:
-            self.last_auth_change = "User signed in"
-            return rx.toast.success("User just signed in!", position="top-center")
-        else:
-            self.last_auth_change = "User signed out"
-            return rx.toast.warning("User just signed out!", position="top-center")
+        old_val = self.last_auth_change
+        first_load = old_val == "No changes yet."
+        new_val = "User signed in" if clerk_state.is_signed_in else "User signed out"
+        self.last_auth_change = new_val
+        if not first_load and not old_val == new_val:
+            return rx.toast.info(new_val, position="top-center")
+        return None
 
 
 def demo_page_header_and_description() -> rx.Component:
@@ -114,6 +115,7 @@ def demo_page_header_and_description() -> rx.Component:
             rx.list_item(
                 "adds a way to register event handlers to be called on authentication changes (login/logout)"
             ),
+            rx.list_item("Checks JWT tokens are actually valid (not expired etc.)"),
         ),
         rx.accordion.root(
             rx.accordion.item(

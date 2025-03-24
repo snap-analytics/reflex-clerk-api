@@ -23,18 +23,24 @@ filename = f"{config.app_name}/{config.app_name}.py"
 class State(rx.State):
     """The app state."""
 
-    info_from_load: str = "Nothing yet."
+    # Store information that is populated during an on_load event.
+    info_from_load: str = "Not loaded yet."
+    # Store information whenever the user logs in or out.
     last_auth_change: str = "No changes yet."
 
     @rx.event
     async def do_something_on_load(self) -> EventType:
+        """Example of a handler that should run on_load, but *after* the ClerkState is updated.
+
+        E.g., The handler needs to know whether the user is logged in or not.
+        """
         clerk_state = await self.get_state(clerk.ClerkState)
         self.info_from_load = f"""\
         State.is_hydrated: {self.is_hydrated}
         clerkstate.auth_checked: {clerk_state.auth_checked}
         ClerkState.is_logged_in: {clerk_state.is_signed_in}
         """
-        return rx.toast.info("Loaded!")
+        return rx.toast.info("On load event has finished")
 
     @rx.event
     async def do_something_on_log_in_or_out(self) -> EventType:
@@ -52,40 +58,137 @@ class State(rx.State):
             return rx.toast.warning("User just signed out!", position="top-center")
 
 
-def header_and_description() -> rx.Component:
+def demo_page_header_and_description() -> rx.Component:
     return rx.vstack(
         rx.heading("reflex-clerk-api demo", size="9"),
         rx.heading(
-            "This demonstrates the ClerkAPI component (wrapping `@clerk/clerk-react`).",
+            "Custom",
+            rx.link(rx.code("reflex"), href="https://reflex.dev"),
+            "components that wrap Clerk react components (",
+            rx.link(
+                rx.code("@clerk/clerk-react"),
+                href="https://www.npmjs.com/package/@clerk/clerk-react",
+            ),
+            ") and interact with the Clerk backend API.",
             size="4",
         ),
+        rx.heading(
+            "See the ",
+            rx.link(
+                "overview of Clerk components",
+                href="https://clerk.com/docs/components/overview",
+            ),
+            " for more info on the wrapped components.",
+            size="5",
+        ),
+        rx.divider(),
         rx.text(
-            "This is intended to be roughly a drop-in replacement of `kroo/reflex-clerk` as that repository is no longer maintained."
+            "Note: This is intended to be roughly a drop-in replacement of the ",
+            rx.code("kroo/reflex-clerk"),
+            " package that is no longer maintained.",
         ),
-        rx.divider(),
-        rx.text("Additionally, this implementation:"),
+        rx.heading(
+            "In addition to wrapping the basic components (and in comparison to Kroo's implementation), this additionally:",
+            size="5",
+        ),
         rx.unordered_list(
-            rx.list_item("uses Clerk's maintained python backend api"),
-            rx.list_item("uses async/await for requests to Clerk"),
-            rx.list_item("fully supports reflex 0.7.x"),
             rx.list_item(
-                "includes a helper for handling `on_load` events (ensuring the ClerkState is updated before other on_load events)"
+                "uses Clerk's maintained python backend api (",
+                rx.link(
+                    "clerk-backend-api",
+                    href="https://pypi.org/project/clerk-backend-api/",
+                ),
+                ")",
             ),
             rx.list_item(
-                "adds method to register event handlers that should be called on user login/logout"
+                "is fully asynchronous, using ",
+                rx.code("async/await"),
+                " for all requests to the Clerk backend",
+            ),
+            rx.list_item("supports reflex 0.7.x"),
+            rx.list_item(
+                "adds a helper for handling ",
+                rx.code("on_load"),
+                " events that require knowledge of user authentication status. (i.e. ensuring the ClerkState is updated first)",
+            ),
+            rx.list_item(
+                "adds a way to register event handlers that should be called on authentication changes (login/logout)"
             ),
         ),
-        rx.markdown(
-            dedent(
-                """\
-                All examples below assume that you have imported the ClerkAPI as follows:
-                ```python
+    )
+
+
+copy_button = rx.button(
+    rx.icon("copy"),
+    variant="soft",
+    position="absolute",
+    top="8px",
+    right="0",
+)
+
+
+def getting_started() -> rx.Component:
+    return rx.vstack(
+        rx.heading("Getting Started", size="6"),
+        rx.text("Install with pip: "),
+        rx.code_block(
+            "pip install reflex-clerk-api",
+            language="bash",
+            can_copy=True,
+            copy_button=copy_button,
+        ),
+        rx.text("Or with a package manager (uv/poetry):"),
+        rx.code_block(
+            "uv add reflex-clerk-api",
+            language="bash",
+            can_copy=True,
+            copy_button=copy_button,
+        ),
+        rx.heading(
+            "Import the package",
+            size="5",
+        ),
+        rx.code_block(
+            "import reflex_clerk_api as clerk",
+            language="python",
+            can_copy=True,
+            copy_button=copy_button,
+        ),
+        rx.accordion.root(
+            rx.accordion.item(
+                header="Minimal example",
+                content=rx.code_block(
+                    dedent("""\
                 import reflex_clerk_api as clerk
-                ```
-                """
-            )
+
+                def index() -> rx.Component:
+                    return clerk.clerk_provider(
+                        clerk.clerk_loaded(
+                            clerk.signed_in(
+                                clerk.sign_on(
+                                    rx.button("Sign out"),
+                                ),
+                            ),
+                            clerk.signed_out(
+                                rx.button("Sign in"),
+                            ),
+                        ),
+                        publishable_key=os.environ["CLERK_PUBLISHABLE_KEY"],
+                        secret_key=os.environ["CLERK_SECRET_KEY"],
+                        register_user_state=True,
+                    )
+                """),
+                    language="python",
+                ),
+            ),
+            collapsible=True,
+            variant="soft",
         ),
-        rx.divider(),
+    )
+
+
+def migration_notes() -> rx.Component:
+    return rx.vstack(
         rx.text("Migration notes:"),
         rx.unordered_list(
             rx.list_item(
@@ -327,7 +430,12 @@ def index() -> rx.Component:
     return clerk.clerk_provider(
         rx.container(
             rx.vstack(
-                header_and_description(),
+                demo_page_header_and_description(),
+                rx.divider(),
+                rx.hstack(
+                    getting_started(),
+                    migration_notes(),
+                ),
                 rx.button("Dev reset", on_click=clerk.ClerkState.dev_reset),
                 rx.divider(),
                 rx.grid(

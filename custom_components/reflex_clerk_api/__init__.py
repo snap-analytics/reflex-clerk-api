@@ -10,11 +10,13 @@ from .control_components import (
     clerk_loaded,
     clerk_loading,
     protect,
+    redirect_to_user_profile,
     signed_in,
     signed_out,
 )
 from .pages import add_sign_in_page, add_sign_up_page
 from .unstyled_components import SignInButton, sign_in_button, sign_out_button
+from .user_components import user_button, user_profile
 
 __all__ = [
     "ClerkState",
@@ -27,6 +29,7 @@ __all__ = [
     "clerk_provider",
     "on_load",
     "protect",
+    "redirect_to_user_profile",
     "register_on_auth_change_handler",
     "sign_in",
     "sign_in_button",
@@ -34,4 +37,6 @@ __all__ = [
     "sign_up",
     "signed_in",
     "signed_out",
+    "user_button",
+    "user_profile",
 ]

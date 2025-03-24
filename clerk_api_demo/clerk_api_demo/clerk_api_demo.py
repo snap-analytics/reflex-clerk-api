@@ -512,6 +512,38 @@ def user_info_demo() -> rx.Component:
     )
 
 
+def user_profile_demo() -> rx.Component:
+    demo = rx.vstack(
+        rx.text(
+            "Either include the ",
+            rx.code("clerk.user_profile"),
+            " component that renders a UI within your page.",
+        ),
+        rx.dialog.root(
+            rx.dialog.trigger(
+                rx.button("Show in dialog"),
+            ),
+            rx.dialog.content(
+                clerk.user_profile(),
+                width="1000px",
+                max_width="1000px",
+            ),
+        ),
+        rx.text(
+            "Or you can redirect the user by rendering ",
+            rx.code("clerk.redirect_to_user_profile()"),
+            ". However, this will redirect as soon as it is rendered, so it's a bit tricky to use.",
+        ),
+        width="100%",
+    )
+
+    return demo_card(
+        "User profile management",
+        "Users can manage their profile via the Clerk interface.",
+        demo,
+    )
+
+
 def demo_header() -> rx.Component:
     # rx.markdown(
     #     dedent(
@@ -544,9 +576,22 @@ def demo_header() -> rx.Component:
                 width="50%",
             ),
             rx.card(
-                rx.data_list.root(
-                    data_list_item("username", rx.code("test+clerk_test@gmail.com")),
-                    data_list_item("password", rx.code("test-clerk-password")),
+                rx.vstack(
+                    rx.data_list.root(
+                        data_list_item(
+                            "username", rx.code("test+clerk_test@gmail.com")
+                        ),
+                        data_list_item("password", rx.code("test-clerk-password")),
+                    ),
+                    rx.hstack(
+                        clerk.signed_in(clerk.sign_out_button(rx.button("Sign out"))),
+                        clerk.signed_out(
+                            rx.hstack(
+                                clerk.sign_in_button(rx.button("Sign in")),
+                                rx.link(rx.button("Sign up"), href="/sign-up"),
+                            ),
+                        ),
+                    ),
                 ),
                 width="50%",
             ),
@@ -595,6 +640,7 @@ def index() -> rx.Component:
                     on_auth_change_demo(),
                     user_info_demo(),
                     links_to_demo_pages(),
+                    user_profile_demo(),
                     columns=rx.breakpoints(initial="1", sm="2", md="3", xl="4"),
                     spacing="4",
                 ),

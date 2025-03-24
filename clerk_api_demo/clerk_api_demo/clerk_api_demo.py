@@ -426,7 +426,18 @@ def clerk_loaded_demo() -> rx.Component:
 
 
 def links_to_demo_pages() -> rx.Component:
-    demo = rx.fragment(
+    demo = rx.vstack(
+        rx.markdown(
+            dedent("""\
+            To use the built-in pages, just do:
+
+            ```python
+            clerk.add_sign_in_page(app)
+            clerk.add_sign_up_page(app)
+            ```
+
+            But, you can also create your own with more customization.""")
+        ),
         clerk.signed_out(
             rx.grid(
                 rx.link(rx.button("Go to sign up page", width="100%"), href="/sign-up"),
@@ -441,18 +452,8 @@ def links_to_demo_pages() -> rx.Component:
         ),
     )
     return demo_card(
-        "Default sign-in and sign-up pages",
-        rx.markdown(
-            dedent("""\
-            These are some built-in sign-in and sign-up pages. To use them, just do:
-
-            ```python
-            clerk.add_sign_in_page(app)
-            clerk.add_sign_up_page(app)
-            ```
-
-            You can also create your own with more customization.""")
-        ),
+        "Sign-in and sign-up pages",
+        "Some basic sign-in and sign-up pages are implemented for easy use. You can also create your own.",
         demo,
     )
 

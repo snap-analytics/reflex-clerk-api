@@ -112,8 +112,16 @@ def demo_page_header_and_description() -> rx.Component:
                 " events that require knowledge of user authentication status. (i.e. ensuring the ClerkState is updated first)",
             ),
             rx.list_item(
-                "adds a way to register event handlers that should be called on authentication changes (login/logout)"
+                "adds a way to register event handlers to be called on authentication changes (login/logout)"
             ),
+        ),
+        rx.accordion.root(
+            rx.accordion.item(
+                header="Migration notes",
+                content=migration_notes(),
+            ),
+            variant="soft",
+            collapsible=True,
         ),
     )
 
@@ -189,7 +197,6 @@ def getting_started() -> rx.Component:
 
 def migration_notes() -> rx.Component:
     return rx.vstack(
-        rx.text("Migration notes:"),
         rx.unordered_list(
             rx.list_item(
                 "update your import to be from `reflex_clerk_api` instead of `reflex_clerk`"
@@ -428,15 +435,15 @@ def index() -> rx.Component:
     clerk.register_on_auth_change_handler(State.do_something_on_log_in_or_out)
 
     return clerk.clerk_provider(
-        rx.container(
+        rx.box(
             rx.vstack(
-                demo_page_header_and_description(),
-                rx.divider(),
-                rx.hstack(
+                rx.flex(
+                    demo_page_header_and_description(),
                     getting_started(),
-                    migration_notes(),
+                    spacing="7",
+                    direction=rx.breakpoints(initial="column", sm="row"),
                 ),
-                rx.button("Dev reset", on_click=clerk.ClerkState.dev_reset),
+                # rx.button("Dev reset", on_click=clerk.ClerkState.force_reset),
                 rx.divider(),
                 rx.grid(
                     current_clerk_state_values(),
@@ -452,8 +459,9 @@ def index() -> rx.Component:
                 spacing="7",
             ),
             height="100vh",
-            size="4",
+            max_width="100%",
             overflow_y="auto",
+            padding="2em",
         ),
         publishable_key=os.environ["CLERK_PUBLISHABLE_KEY"],
         register_user_state=True,

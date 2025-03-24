@@ -127,6 +127,33 @@ class ClerkState(rx.State):
         self.auth_checked = True
         return list(self._dependent_handlers.values())
 
+    @rx.event(background=True)
+    async def wait_for_auth_check(self, uid: uuid.UUID | str) -> EventType:
+        """Wait for the Clerk authentication to complete (event sent from frontend).
+
+        Can't just use a blocking wait_for_auth_check because we are really waiting for the frontend event trigger to run, so we need to not block that while we wait.
+
+        This can then return on_load events once auth_checked is True.
+        """
+        uid = uuid.UUID(uid) if isinstance(uid, str) else uid
+        logging.debug(f"Waiting for auth check: {uid} ({type(uid)})")
+
+        on_loads = self._on_load_events.get(uid, None)
+        if on_loads is None:
+            logging.warning("Waited for auth, but no on_load events registered.")
+            on_loads = []
+
+        start_time = time.time()
+        while time.time() - start_time < self._auth_wait_timeout_seconds:
+            if self.auth_checked:
+                logging.debug("Auth check complete")
+                return on_loads
+            logging.debug("...waiting for auth...")
+            # TODO: Ideally, wait on some event instead of sleeping
+            await asyncio.sleep(0.05)
+        logging.warning("Auth check timed out")
+        return on_loads
+
     @classmethod
     def _set_secret_key(cls, secret_key: str) -> None:
         if not secret_key:
@@ -183,33 +210,6 @@ class ClerkState(rx.State):
         keys = jwks.model_dump()["keys"]
         self._set_jwk_keys(keys)
         return keys
-
-    @rx.event(background=True)
-    async def _wait_for_auth_check(self, uid: uuid.UUID | str) -> EventType:
-        """Wait for the Clerk authentication to complete (event sent from frontend).
-
-        Can't just use a blocking wait_for_auth_check because we are really waiting for the frontend event trigger to run, so we need to not block that while we wait.
-
-        This can then return on_load events once auth_checked is True.
-        """
-        uid = uuid.UUID(uid) if isinstance(uid, str) else uid
-        logging.debug(f"Waiting for auth check: {uid} ({type(uid)})")
-
-        on_loads = self._on_load_events.get(uid, None)
-        if on_loads is None:
-            logging.warning("Waited for auth, but no on_load events registered.")
-            on_loads = []
-
-        start_time = time.time()
-        while time.time() - start_time < self._auth_wait_timeout_seconds:
-            if self.auth_checked:
-                logging.debug("Auth check complete")
-                return on_loads
-            logging.debug("...waiting for auth...")
-            # TODO: Ideally, wait on some event instead of sleeping
-            await asyncio.sleep(0.05)
-        logging.warning("Auth check timed out")
-        return on_loads
 
     # @rx.event
     # def force_reset(self) -> None:
@@ -371,7 +371,7 @@ def on_load(on_load_events: EventType[()] | None) -> EventType[()] | None:
     #  so we need to not block that while we wait.
     uid = uuid.uuid4()
     ClerkState._set_on_load_events(uid, on_load_list)
-    return [ClerkState._wait_for_auth_check(uid)]
+    return [ClerkState.wait_for_auth_check(uid)]
 
 
 T = TypeVar("T", bound=rx.State)

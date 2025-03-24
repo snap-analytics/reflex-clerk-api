@@ -69,72 +69,20 @@ class ClerkState(rx.State):
         cls._dependent_handlers[hash_id] = handler
 
     @classmethod
-    def set_secret_key(cls, secret_key: str) -> None:
-        if not secret_key:
-            raise MissingSecretKeyError("secret_key must be set (and not empty)")
-        cls._secret_key = secret_key
-
-    @classmethod
-    def set_on_load_events(cls, uid: uuid.UUID, on_load_events: EventType[()]) -> None:
-        logging.debug(f"Registing on_load events: {uid}")
-        cls._on_load_events[uid] = on_load_events
-
-    @classmethod
     def set_auth_wait_timeout_seconds(cls, seconds: float) -> None:
-        cls._auth_wait_timeout_seconds = seconds
+        """Sets the max time to wait for initial auth check before running other on_load events.
 
-    @classmethod
-    def set_client(cls) -> None:
-        if cls._secret_key:
-            secret_key = cls._secret_key
-        else:
-            if "CLERK_SECRET_KEY" not in os.environ:
-                raise MissingSecretKeyError(
-                    "CLERK_SECRET_KEY either needs to be passed into clerk_provider(...) or set as an environment variable."
-                )
-            secret_key = os.environ["CLERK_SECRET_KEY"]
-        client = clerk_backend_api.Clerk(bearer_auth=secret_key)
-        cls._client = client
+        Note: on_load events will still be run after a timed out auth check.
+        Check ClerkState.auth_checked to see if auth check is complete.
+        """
+        cls._auth_wait_timeout_seconds = seconds
 
     @property
     def client(self) -> clerk_backend_api.Clerk:
         if self._client is None:
-            self.set_client()
+            self._set_client()
         assert self._client is not None
         return self._client
-
-    @classmethod
-    def _set_jwk_keys(cls, keys: dict[str, Any] | None) -> None:
-        cls._jwk_keys = keys
-
-    @classmethod
-    def _request_jwk_reset(cls) -> None:
-        """Reset the JWK keys so they will be re-fetched on next attempt.
-
-        Only do so if it has been a while since last reset (to prevent malicious tokens from forcing
-        constant re-fetching).
-        """
-        now = time.time()
-        if now - cls._last_jwk_reset < 10:
-            logging.warning("JWK reset requested too soon")
-            return
-        cls._last_jwk_reset = time.time()
-        cls._jwk_keys = None
-
-    async def get_jwk_keys(self) -> dict[str, Any]:
-        """Get the JWK keys from the Clerk API.
-
-        Note: Cannot be a property because it requires async call to populate.
-        Only needs to be done once (will be refreshed on errors).
-        """
-        if self._jwk_keys:
-            return self._jwk_keys
-        jwks = await self.client.jwks.get_async()
-        assert jwks is not None
-        assert jwks.keys is not None
-        keys = jwks.model_dump()["keys"]
-        self._set_jwk_keys(keys)
-        return keys
 
     @rx.event
     async def set_clerk_session(self, token: str) -> EventType:
@@ -143,7 +91,7 @@ class ClerkState(rx.State):
         This event is triggered by the frontend via the ClerkSessionSynchronizer/ClerkProvider component.
         """
         logging.debug("Setting Clerk session")
-        jwks = await self.get_jwk_keys()
+        jwks = await self._get_jwk_keys()
         try:
             decoded: JWTClaims = jwt.decode(
                 token, {"keys": jwks}, claims_options=self._claims_options
@@ -170,13 +118,74 @@ class ClerkState(rx.State):
 
     @rx.event
     def clear_clerk_session(self) -> EventType:
+        """Clear the Clerk session information.
+
+        This event is triggered by the frontend via the ClerkSessionSynchronizer/ClerkProvider component.
+        """
         logging.debug("Clearing Clerk session")
         self.reset()
         self.auth_checked = True
         return list(self._dependent_handlers.values())
 
+    @classmethod
+    def _set_secret_key(cls, secret_key: str) -> None:
+        if not secret_key:
+            raise MissingSecretKeyError("secret_key must be set (and not empty)")
+        cls._secret_key = secret_key
+
+    @classmethod
+    def _set_on_load_events(cls, uid: uuid.UUID, on_load_events: EventType[()]) -> None:
+        logging.debug(f"Registing on_load events: {uid}")
+        cls._on_load_events[uid] = on_load_events
+
+    @classmethod
+    def _set_client(cls) -> None:
+        if cls._secret_key:
+            secret_key = cls._secret_key
+        else:
+            if "CLERK_SECRET_KEY" not in os.environ:
+                raise MissingSecretKeyError(
+                    "CLERK_SECRET_KEY either needs to be passed into clerk_provider(...) or set as an environment variable."
+                )
+            secret_key = os.environ["CLERK_SECRET_KEY"]
+        client = clerk_backend_api.Clerk(bearer_auth=secret_key)
+        cls._client = client
+
+    @classmethod
+    def _set_jwk_keys(cls, keys: dict[str, Any] | None) -> None:
+        cls._jwk_keys = keys
+
+    @classmethod
+    def _request_jwk_reset(cls) -> None:
+        """Reset the JWK keys so they will be re-fetched on next attempt.
+
+        Only do so if it has been a while since last reset (to prevent malicious tokens from forcing
+        constant re-fetching).
+        """
+        now = time.time()
+        if now - cls._last_jwk_reset < 10:
+            logging.warning("JWK reset requested too soon")
+            return
+        cls._last_jwk_reset = time.time()
+        cls._jwk_keys = None
+
+    async def _get_jwk_keys(self) -> dict[str, Any]:
+        """Get the JWK keys from the Clerk API.
+
+        Note: Cannot be a property because it requires async call to populate.
+        Only needs to be done once (will be refreshed on errors).
+        """
+        if self._jwk_keys:
+            return self._jwk_keys
+        jwks = await self.client.jwks.get_async()
+        assert jwks is not None
+        assert jwks.keys is not None
+        keys = jwks.model_dump()["keys"]
+        self._set_jwk_keys(keys)
+        return keys
+
     @rx.event(background=True)
-    async def wait_for_auth_check(self, uid: uuid.UUID | str) -> EventType:
+    async def _wait_for_auth_check(self, uid: uuid.UUID | str) -> EventType:
         """Wait for the Clerk authentication to complete (event sent from frontend).
 
         Can't just use a blocking wait_for_auth_check because we are really waiting for the frontend event trigger to run, so we need to not block that while we wait.
@@ -185,18 +194,22 @@ class ClerkState(rx.State):
         """
         uid = uuid.UUID(uid) if isinstance(uid, str) else uid
         logging.debug(f"Waiting for auth check: {uid} ({type(uid)})")
+
+        on_loads = self._on_load_events.get(uid, None)
+        if on_loads is None:
+            logging.warning("Waited for auth, but no on_load events registered.")
+            on_loads = []
+
         start_time = time.time()
         while time.time() - start_time < self._auth_wait_timeout_seconds:
             if self.auth_checked:
                 logging.debug("Auth check complete")
-                return self._on_load_events.get(
-                    uid, [rx.toast.info("Auth check complete (no on_loads)!")]
-                )
-            logging.debug("...sleeping...")
+                return on_loads
+            logging.debug("...waiting for auth...")
             # TODO: Ideally, wait on some event instead of sleeping
             await asyncio.sleep(0.05)
-        logging.debug("Auth check timed out")
-        return rx.toast.error("Auth check timed out!")
+        logging.warning("Auth check timed out")
+        return on_loads
 
     # @rx.event
     # def force_reset(self) -> None:
@@ -357,8 +370,8 @@ def on_load(on_load_events: EventType[()] | None) -> EventType[()] | None:
     #  Can't just use a blocking wait_for_auth_check because we are really waiting for the frontend event trigger to run,
     #  so we need to not block that while we wait.
     uid = uuid.uuid4()
-    ClerkState.set_on_load_events(uid, on_load_list)
-    return [ClerkState.wait_for_auth_check(uid)]
+    ClerkState._set_on_load_events(uid, on_load_list)
+    return [ClerkState._wait_for_auth_check(uid)]
 
 
 T = TypeVar("T", bound=rx.State)
@@ -431,7 +444,7 @@ def clerk_provider(
     """
     logging.critical("running clerk_provider")
     if secret_key:
-        ClerkState.set_secret_key(secret_key)
+        ClerkState._set_secret_key(secret_key)
 
     if register_user_state:
         register_on_auth_change_handler(ClerkUser.load_user)

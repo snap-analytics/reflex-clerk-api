@@ -31,11 +31,11 @@ tasks:
 
   bump-minor:
     cmds:
-      - uv run scripts/bump-version.py patch pyproject.toml
+      - uv run scripts/bump-version.py minor pyproject.toml
 
   bump-major:
     cmds:
-      - uv run scripts/bump-version.py patch pyproject.toml
+      - uv run scripts/bump-version.py major pyproject.toml
 
   push-tag:
     cmds:

@@ -246,15 +246,25 @@ def data_list_item(label: str, value: rx.Component | str) -> rx.Component:
 def demo_card(
     heading: str, description: str | rx.Component, demo: rx.Component
 ) -> rx.Component:
-    return rx.card(
+    card = rx.card(
         rx.vstack(
             rx.heading(heading, size="5"),
             rx.text(description) if isinstance(description, str) else description,
-            rx.divider(),
-            demo,
         ),
         max_width="30em",
+        _hover=dict(background=rx.color("gray", 4)),
     )
+
+    content_popover = rx.hover_card.root(
+        rx.hover_card.trigger(
+            card,
+        ),
+        rx.hover_card.content(
+            demo,
+            avoid_collisions=True,
+        ),
+    )
+    return content_popover
 
 
 def current_clerk_state_values() -> rx.Component:
@@ -383,7 +393,7 @@ def clerk_loaded_demo() -> rx.Component:
             rx.divider(),
             clerk.signed_in(
                 "You are signed in.",
-                clerk.sign_out_button(rx.button("Sign out")),
+                clerk.sign_out_button(rx.button("Sign out", width="100%")),
             ),
         )
     )
@@ -393,7 +403,7 @@ def clerk_loaded_demo() -> rx.Component:
             rx.divider(),
             clerk.signed_out(
                 "You are signed out.",
-                clerk.sign_in_button(rx.button("Sign in")),
+                clerk.sign_in_button(rx.button("Sign in", width="100%")),
             ),
         )
     )
@@ -448,7 +458,8 @@ def links_to_demo_pages() -> rx.Component:
             )
         ),
         clerk.signed_in(
-            rx.text("Sign out to see links to default sign-in and sign-up pages.")
+            rx.text("Sign out to see links to default sign-in and sign-up pages."),
+            clerk.sign_out_button(rx.button("Sign out", width="100%")),
         ),
     )
     return demo_card(
@@ -468,6 +479,8 @@ def user_info_demo() -> rx.Component:
             This is not enabled by default to avoid unnecessary api calls to the Clerk backend. Also note that only a subset of user information is retrieved by the ClerkUser state.
 
             Full user information can be retrieved easily within event handler methods via `await clerk.get_user(self)` that will return a full `clerk_backend_api.models.User` model.
+
+            Test credentials will not have a name or image by default.
             """)
         ),
         clerk.signed_in(
@@ -489,7 +502,6 @@ def user_info_demo() -> rx.Component:
                 spacing="5",
             )
         ),
-        rx.divider(),
         clerk.signed_out(rx.text("Sign in to see user information.")),
     )
 
@@ -497,6 +509,67 @@ def user_info_demo() -> rx.Component:
         "ClerkUser info",
         "To conveniently use basic information within the frontend, you can use the `clerk.ClerkUser` state.",
         demo,
+    )
+
+
+def demo_header() -> rx.Component:
+    # rx.markdown(
+    #     dedent(
+    #         """\
+    #     The demos below are using a development Clerk API key, so you can try out everything with fake credentials.
+    #
+    #     To simply log in, you can use the email/password combination:
+    #
+    #     - username: `test+clerk_test@gmail.com`
+    #     - password: `test-clerk-password`
+    #
+    #     Or if you want to try signing up, you can use any email with `+clerk_test` appended to it. E.g., `myrandomemail+clerk_test@anydomain.com`.
+    #
+    #     Use any password you like, and then the verification code will be `424242`.
+    #
+    #     More info on test credentials can be found [in the Clerk documentation](https://clerk.com/docs/testing/test-emails-and-phones).
+    #     """,
+    #     )
+    # ),
+    return rx.vstack(
+        rx.heading("Demos", size="6"),
+        rx.hstack(
+            rx.vstack(
+                rx.text(
+                    "The demos below are using a development Clerk API key, so you can try out everything with fake credentials."
+                ),
+                rx.text(
+                    "To simply log in, you can use the email/password combination."
+                ),
+                width="50%",
+            ),
+            rx.card(
+                rx.data_list.root(
+                    data_list_item("username", rx.code("test+clerk_test@gmail.com")),
+                    data_list_item("password", rx.code("test-clerk-password")),
+                ),
+                width="50%",
+            ),
+        ),
+        rx.text(
+            "Or if you want test signing up, you can use any email with ",
+            rx.code("+clerk_test"),
+            " appended to it. E.g., ",
+            rx.code("any_email+clerk_test@anydomain.com"),
+            ".",
+        ),
+        rx.text(
+            "Use any password you like, and the verification code will be ",
+            rx.code("424242"),
+            ".",
+        ),
+        rx.text(
+            "More info on test credentials can be found ",
+            rx.link(
+                "in the Clerk documentation.",
+                href="https://clerk.com/docs/testing/test-emails-and-phones",
+            ),
+        ),
     )
 
 
@@ -514,6 +587,7 @@ def index() -> rx.Component:
                 ),
                 # rx.button("Dev reset", on_click=clerk.ClerkState.force_reset),
                 rx.divider(),
+                demo_header(),
                 rx.grid(
                     current_clerk_state_values(),
                     clerk_loaded_demo(),

@@ -225,6 +225,13 @@ def migration_notes() -> rx.Component:
     )
 
 
+def data_list_item(label: str, value: rx.Component | str) -> rx.Component:
+    return rx.data_list.item(
+        rx.data_list.label(label),
+        rx.data_list.value(value),
+    )
+
+
 def demo_card(
     heading: str, description: str | rx.Component, demo: rx.Component
 ) -> rx.Component:
@@ -241,17 +248,39 @@ def demo_card(
 
 def current_clerk_state_values() -> rx.Component:
     demo = rx.vstack(
-        rx.text(
-            f"""State.is_hydrated: {State.is_hydrated},
-                ClerkState.auth_checked: {clerk.ClerkState.auth_checked},
-                ClerkState.is_logged_in: {clerk.ClerkState.is_signed_in}""",
-            white_space="pre-line",
-            margin_top="1em",
+        rx.text("State variables:"),
+        rx.data_list.root(
+            data_list_item("State.is_hydrated", rx.text(State.is_hydrated)),
+            data_list_item(
+                "ClerkState.auth_checked", rx.text(clerk.ClerkState.auth_checked)
+            ),
+            data_list_item(
+                "ClerkState.is_logged_in", rx.text(clerk.ClerkState.is_signed_in)
+            ),
+            data_list_item("ClerkState.user_id", rx.text(clerk.ClerkState.user_id)),
+            # def register_dependent_handler(cls, handler: EventCallback) -> None:
+            # def set_auth_wait_timeout_seconds(cls, seconds: float) -> None:
+        ),
+        rx.divider(),
+        rx.text("State methods:"),
+        rx.unordered_list(
+            rx.list_item(
+                rx.code("ClerkState.register_dependent_handler(handler)"),
+                " -- Classmethod to register a handler to be called after the ClerkState is updated",
+            ),
+            rx.list_item(
+                rx.code("ClerkState.set_auth_wait_timeout_seconds(seconds)"),
+                " -- Set the timeout for waiting for the auth check to complete",
+            ),
+            rx.list_item(
+                rx.code("clerk_state.client"),
+                " -- Property to access the clerk_backend_api client",
+            ),
         ),
     )
     return demo_card(
-        "Current ClerkState values",
-        "Showing the current state of the ClerkState variables.",
+        "ClerkState variables and methods",
+        "State variables and methods available on the `ClerkState` object.",
         demo,
     )
 
@@ -387,22 +416,16 @@ def links_to_demo_pages() -> rx.Component:
 
 
 def user_info_demo() -> rx.Component:
-    def item(label: str, value: rx.Component | str) -> rx.Component:
-        return rx.data_list.item(
-            rx.data_list.label(label),
-            rx.data_list.value(value),
-        )
-
     demo = rx.vstack(
         clerk.signed_in(
             rx.hstack(
                 rx.card(
                     rx.data_list.root(
-                        item("first name", clerk.ClerkUser.first_name),
-                        item("last name", clerk.ClerkUser.last_name),
-                        item("username", clerk.ClerkUser.username),
-                        item("email", clerk.ClerkUser.email_address),
-                        item("has image", rx.text(clerk.ClerkUser.has_image)),
+                        data_list_item("first name", clerk.ClerkUser.first_name),
+                        data_list_item("last name", clerk.ClerkUser.last_name),
+                        data_list_item("username", clerk.ClerkUser.username),
+                        data_list_item("email", clerk.ClerkUser.email_address),
+                        data_list_item("has image", rx.text(clerk.ClerkUser.has_image)),
                     ),
                     # border=f"1px solid {rx.color('gray', 6)}",
                     # padding="2em",
@@ -454,7 +477,7 @@ def index() -> rx.Component:
                     on_auth_change_demo(),
                     user_info_demo(),
                     links_to_demo_pages(),
-                    columns=rx.breakpoints(initial="1", sm="2"),
+                    columns=rx.breakpoints(initial="1", sm="2", md="3", xl="4"),
                     spacing="4",
                 ),
                 align="center",

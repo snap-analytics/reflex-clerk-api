@@ -5,9 +5,10 @@ import time
 import uuid
 from typing import Any, ClassVar, TypeVar
 
+import authlib.jose.errors as jose_errors
 import clerk_backend_api
 import reflex as rx
-from authlib.jose import JoseError, JWTClaims, jwt
+from authlib.jose import JWTClaims, jwt
 from reflex.event import EventCallback, EventType
 from reflex.utils.exceptions import ImmutableStateError
 from reflex.utils.imports import ImportTypes
@@ -40,15 +41,21 @@ class ClerkState(rx.State):
     user_id: str | None = None
     """The clerk user ID of the user, if they are logged in."""
 
-    # NOTE: ClassVar tells reflex it doesn't need to include these in the persisted state.
+    # NOTE: ClassVar tells reflex it doesn't need to include these in the persisted state per instance.
     _auth_wait_timeout_seconds: ClassVar[float] = 1.0
     _secret_key: ClassVar[str | None] = None
     """The Clerk secret_key set during clerk_provider creation."""
     _on_load_events: ClassVar[dict[uuid.UUID, EventType[()]]] = {}
     _dependent_handlers: ClassVar[dict[int, EventCallback]] = {}
     _client: ClassVar[clerk_backend_api.Clerk | None] = None
-    # NOTE: Underscore only is still stored in state but is private
-    _jwk_keys: dict[str, Any] | None = None
+    _jwk_keys: ClassVar[dict[str, Any] | None] = None
+    _last_jwk_reset: ClassVar[float] = 0.0
+    _claims_options: ClassVar[dict[str, Any]] = {
+        "iss": {"value": "https://api.clerk.dev"},
+        "exp": {"essential": True},
+        "nbf": {"essential": True},
+        # "azp": {"essential": False, "values": ["http://localhost:3000", "https://example.com"]},
+    }
 
     @classmethod
     def register_dependent_handler(cls, handler: EventCallback) -> None:
@@ -96,36 +103,75 @@ class ClerkState(rx.State):
         assert self._client is not None
         return self._client
 
+    @classmethod
+    def _set_jwk_keys(cls, keys: dict[str, Any] | None) -> None:
+        cls._jwk_keys = keys
+
+    @classmethod
+    def _request_jwk_reset(cls) -> None:
+        """Reset the JWK keys so they will be re-fetched on next attempt.
+
+        Only do so if it has been a while since last reset (to prevent malicious tokens from forcing
+        constant re-fetching).
+        """
+        now = time.time()
+        if now - cls._last_jwk_reset < 10:
+            logging.warning("JWK reset requested too soon")
+            return
+        cls._last_jwk_reset = time.time()
+        cls._jwk_keys = None
+
+    async def get_jwk_keys(self) -> dict[str, Any]:
+        """Get the JWK keys from the Clerk API.
+
+        Note: Cannot be a property because it requires async call to populate.
+        Only needs to be done once (will be refreshed on errors).
+        """
+        if self._jwk_keys:
+            return self._jwk_keys
+        jwks = await self.client.jwks.get_async()
+        assert jwks is not None
+        assert jwks.keys is not None
+        keys = jwks.model_dump()["keys"]
+        self._set_jwk_keys(keys)
+        return keys
+
     @rx.event
     async def set_clerk_session(self, token: str) -> EventType:
+        """Manually obtain user session information via the Clerk JWT.
+
+        This event is triggered by the frontend via the ClerkSessionSynchronizer/ClerkProvider component.
+        """
         logging.debug("Setting Clerk session")
-
-        if not self._jwk_keys:
-            # TODO: Could this be cached on the class instead of per instance?
-            jwks = await self.client.jwks.get_async()
-            assert jwks is not None
-            assert jwks.keys is not None
-            self._jwk_keys = jwks.model_dump()["keys"]
-
+        jwks = await self.get_jwk_keys()
         try:
-            decoded: JWTClaims = jwt.decode(token, {"keys": self._jwk_keys})
-            self.is_signed_in = True
-            self.claims = decoded
-            self.user_id = str(decoded.get("sub"))
-        except JoseError as e:
+            decoded: JWTClaims = jwt.decode(
+                token, {"keys": jwks}, claims_options=self._claims_options
+            )
+        except jose_errors.DecodeError as e:
+            # E.g. DecodeError -- Something went wrong just getting the JWT
+            # On next attempt, new JWKs will be fetched
             self.auth_error = e
+            self._request_jwk_reset()
             logging.warning(f"JWT decode error: {e}")
+            return ClerkState.clear_clerk_session
+        try:
+            # Validate the token according to the claim options (e.g. iss, exp, nbf, azp.)
+            decoded.validate()
+        except (jose_errors.InvalidClaimError, jose_errors.MissingClaimError) as e:
+            logging.warning(f"JWT token is invalid: {e}")
+            return ClerkState.clear_clerk_session
 
         self.is_signed_in = True
+        self.claims = decoded
+        self.user_id = str(decoded.get("sub"))
         self.auth_checked = True
         return list(self._dependent_handlers.values())
 
     @rx.event
     def clear_clerk_session(self) -> EventType:
         logging.debug("Clearing Clerk session")
-        self.is_signed_in = False
-        self.claims = None
-        self.user_id = None
+        self.reset()
         self.auth_checked = True
         return list(self._dependent_handlers.values())
 
@@ -152,14 +198,15 @@ class ClerkState(rx.State):
         logging.debug("Auth check timed out")
         return rx.toast.error("Auth check timed out!")
 
-    @rx.event
-    def dev_reset(self) -> None:
-        self.is_signed_in = False
-        self.auth_checked = False
-        self.claims = None
-        self.user_id = None
-        self._jwk_keys = {}
-        return rx.toast.success("Dev reset!")
+    # @rx.event
+    # def force_reset(self) -> None:
+    #     """Force a reset of the Clerk state.
+    #
+    #     E.g. During development testing.
+    #     """
+    #     self.reset()
+    #     self._set_jwk_keys(None)
+    #     return rx.toast.success("Forced reset complete.")
 
 
 class NotRegisteredError(ReflexClerkApiError):

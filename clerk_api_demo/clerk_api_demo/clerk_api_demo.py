@@ -23,8 +23,10 @@ filename = f"{config.app_name}/{config.app_name}.py"
 class State(rx.State):
     """The app state."""
 
-    # Store information that is populated during an on_load event.
+    # Store information that is populated during an on_load event within clerk.on_load wrapper.
     info_from_load: str = "Not loaded yet."
+    # Same as above but without the clerk.on_load wrapper.
+    info_from_load_without_wrapper: str = "Not loaded yet."
     # Store information whenever the user logs in or out.
     last_auth_change: str = "No changes yet."
 
@@ -38,9 +40,18 @@ class State(rx.State):
         self.info_from_load = f"""\
         State.is_hydrated: {self.is_hydrated}
         clerkstate.auth_checked: {clerk_state.auth_checked}
-        ClerkState.is_logged_in: {clerk_state.is_signed_in}
+        ClerkState.is_signed_in: {clerk_state.is_signed_in}
         """
         return rx.toast.info("On load event has finished")
+
+    @rx.event
+    async def do_something_on_load_without_wrapper(self) -> None:
+        clerk_state = await self.get_state(clerk.ClerkState)
+        self.info_from_load_without_wrapper = f"""\
+        State.is_hydrated: {self.is_hydrated}
+        clerkstate.auth_checked: {clerk_state.auth_checked}
+        ClerkState.is_signed_in: {clerk_state.is_signed_in}
+        """
 
     @rx.event
     async def do_something_on_log_in_or_out(self) -> EventType | None:
@@ -258,8 +269,6 @@ def current_clerk_state_values() -> rx.Component:
                 "ClerkState.is_logged_in", rx.text(clerk.ClerkState.is_signed_in)
             ),
             data_list_item("ClerkState.user_id", rx.text(clerk.ClerkState.user_id)),
-            # def register_dependent_handler(cls, handler: EventCallback) -> None:
-            # def set_auth_wait_timeout_seconds(cls, seconds: float) -> None:
         ),
         rx.divider(),
         rx.text("State methods:"),
@@ -271,6 +280,10 @@ def current_clerk_state_values() -> rx.Component:
             rx.list_item(
                 rx.code("ClerkState.set_auth_wait_timeout_seconds(seconds)"),
                 " -- Set the timeout for waiting for the auth check to complete",
+            ),
+            rx.list_item(
+                rx.code("ClerkState.set_claims_options(claims_options)"),
+                " -- Set JWT claims options",
             ),
             rx.list_item(
                 rx.code("clerk_state.client"),
@@ -286,53 +299,80 @@ def current_clerk_state_values() -> rx.Component:
 
 
 def on_load_demo() -> rx.Component:
-    demo = rx.card(
-        rx.text("What the state saw during it's on_load event:"),
-        rx.text(
-            State.info_from_load,
-            read_only=True,
-            white_space="pre-line",
-            margin_top="1em",
+    state_using_on_load_wrapper = rx.card(
+        rx.vstack(
+            rx.text(
+                "Info from `on_load` event ",
+                rx.text.strong("inside"),
+                " of `clerk.on_load` wrapper:",
+            ),
+            rx.divider(),
+            rx.text(
+                State.info_from_load,
+            ),
+        )
+    )
+    state_not_using_on_load_wrapper = rx.card(
+        rx.vstack(
+            rx.text(
+                "Info from `on_load` event ",
+                rx.text.strong("outside"),
+                " of `clerk.on_load` wrapper:",
+            ),
+            rx.divider(),
+            rx.text(State.info_from_load_without_wrapper),
+        )
+    )
+    demo = rx.vstack(
+        rx.markdown(
+            dedent("""\
+            Wrapping the `on_load` events is necessary because the ClerkState authentication is triggered from a frontend event that can't be guaranteed to run before the other `on_load` events.
+
+            Sometimes the event outside the `clerk.on_load` wrapper will run before the ClerkState is updated (sometimes not).
+            """)
+        ),
+        rx.grid(
+            state_using_on_load_wrapper,
+            state_not_using_on_load_wrapper,
+            spacing="3",
+            columns="2",
+            width="100%",
         ),
     )
     return demo_card(
         "Better on_load handling",
-        rx.markdown(
-            dedent("""\
-            By using setting `on_load=clerk.on_load([...])`,
-            you can ensure that the `ClerkState` is updated before any other `on_load` events are run.
-
-            This is necessary because the ClerkState authentication is triggered from a frontend event that
-            can't be guaranteed to run before the other `on_load` events.
-            """)
+        rx.text(
+            "Wrap ",
+            rx.code("on_load"),
+            " events with ",
+            rx.code(
+                "clerk.on_load(...)",
+                " to ensure the ClerkState is updated before events run.",
+            ),
         ),
         demo,
     )
 
 
 def on_auth_change_demo() -> rx.Component:
-    return demo_card(
-        "On auth change callbacks",
-        rx.vstack(
-            rx.text(
-                "You can register a method to be called when the user logs in or out."
-            ),
-            rx.markdown(
-                dedent("""\
-                ```python
-                clerk.register_on_auth_change_handler(State.do_something_on_log_in_or_out)
-                ```"""),
-                wrap_long_lines=True,
-                width="100%",
-            ),
+    demo = rx.vstack(
+        rx.text("By registering an event handler method like this:"),
+        rx.code_block(
+            "clerk.register_on_auth_change_handler(State.do_something_on_log_in_or_out)",
+            language="python",
+            wrap_long_lines=True,
             width="100%",
         ),
-        rx.vstack(
-            rx.text(
-                "In this demo, you'll see a toast top-center when you log in or out as well as the state variable change below."
-            ),
-            rx.text(f"State.last_auth_change={State.last_auth_change}"),
+        rx.text(
+            "The event handler will be called any time the authentication state of the user changes. In this demo, you'll see a toast top-center when you log in or out as well as the state variable change below."
         ),
+        rx.text(f"State.last_auth_change={State.last_auth_change}"),
+        width="100%",
+    )
+    return demo_card(
+        "On auth change callbacks",
+        "You can register a method to be called when the user logs in or out.",
+        demo,
     )
 
 
@@ -340,6 +380,7 @@ def clerk_loaded_demo() -> rx.Component:
     signed_in_area = rx.card(
         rx.vstack(
             rx.text("You'll only see content below if you are signed in"),
+            rx.divider(),
             clerk.signed_in(
                 "You are signed in.",
                 clerk.sign_out_button(rx.button("Sign out")),
@@ -349,6 +390,7 @@ def clerk_loaded_demo() -> rx.Component:
     signed_out_area = rx.card(
         rx.vstack(
             rx.text("You'll only see content below if you are signed out"),
+            rx.divider(),
             clerk.signed_out(
                 "You are signed out.",
                 clerk.sign_in_button(rx.button("Sign in")),
@@ -417,6 +459,16 @@ def links_to_demo_pages() -> rx.Component:
 
 def user_info_demo() -> rx.Component:
     demo = rx.vstack(
+        rx.markdown(
+            dedent("""\
+            To enable this behaviour, when creating the `clerk_provider`, set `register_user_state=True`.
+            ```clerk.clerk_provider(..., register_user_state=True)```
+
+            This is not enabled by default to avoid unnecessary api calls to the Clerk backend. Also note that only a subset of user information is retrieved by the ClerkUser state.
+
+            Full user information can be retrieved easily within event handler methods via `await clerk.get_user(self)` that will return a full `clerk_backend_api.models.User` model.
+            """)
+        ),
         clerk.signed_in(
             rx.hstack(
                 rx.card(
@@ -441,17 +493,8 @@ def user_info_demo() -> rx.Component:
     )
 
     return demo_card(
-        "Built-in User info",
-        rx.markdown(
-            dedent("""\
-            To conveniently use basic information within the frontend, you can use the `clerk.ClerkUser` state.[^1]
-
-            Full user information can also be retrieved within event handler methods via `await clerk.get_user(self)`.
-
-            [^1]: *Enable this behvior with:*
-            ```clerk.clerk_provider(..., register_user_state=True)```
-            """)
-        ),
+        "ClerkUser info",
+        "To conveniently use basic information within the frontend, you can use the `clerk.ClerkUser` state.",
         demo,
     )
 
@@ -498,6 +541,12 @@ def index() -> rx.Component:
 app = rx.App()
 # NOTE: Use the `clerk.on_load` to ensure that the ClerkState is updated *before* any other on_load events are run.
 #  The `ClerkState` is updated by an event sent from the frontend that is not guaranteed to run before the reflex on_load events.
-app.add_page(index, on_load=clerk.on_load([State.do_something_on_load]))
+app.add_page(
+    index,
+    on_load=[
+        *clerk.on_load([State.do_something_on_load]),
+        State.do_something_on_load_without_wrapper,
+    ],
+)
 clerk.add_sign_in_page(app)
 clerk.add_sign_up_page(app)

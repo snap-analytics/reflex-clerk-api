@@ -13,7 +13,7 @@ concurrency:
 jobs:
   deploy-frontend:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.repository == 'TimChild/reflex-clerk-api' }}
     environment:
       name: demo
     permissions:
@@ -50,7 +50,7 @@ jobs:
 
   deploy-backend:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.repository == 'TimChild/reflex-clerk-api' }}
     environment:
       name: demo
     permissions:

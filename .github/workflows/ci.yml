@@ -68,7 +68,7 @@ jobs:
         working-directory: clerk_api_demo
 
       - name: Install playwright
-        run: uv run playwright install
+        run: uv run playwright install chromium
 
       - name: Run tests
         run: task test

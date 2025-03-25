@@ -22,7 +22,7 @@ tasks:
       - task: lint
       - task: typecheck
     cmds:
-      - uv run playwright install
+      - uv run playwright install chromium
       - uv run pytest
 
   lint:

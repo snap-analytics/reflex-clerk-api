@@ -51,6 +51,7 @@ extend-select = ["I", "RUF"]
 dev = [
     "coverage>=7.6.12",
     "dotenv>=0.9.9",
+    "mkdocstrings-python>=1.16.8",
     "pre-commit>=4.1.0",
     "pyright>=1.1.396",
     "pytest>=8.3.5",

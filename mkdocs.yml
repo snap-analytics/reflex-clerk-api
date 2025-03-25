@@ -36,6 +36,6 @@ markdown_extensions:
 
 plugins:
   - search
-  - sitemap
+  # - sitemap
   - mkdocstrings:
       default_handler: python

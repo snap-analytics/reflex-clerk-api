@@ -147,10 +147,11 @@ def test_sign_in(page: Page):
     expect(page.get_by_role("heading")).to_contain_text("Sign in to")
     page.get_by_role("textbox", name="Email address").click()
     page.get_by_role("textbox", name="Email address").fill(TEST_EMAIL)
-    page.get_by_role("button", name="Continue").click()
+    page.pause()
+    page.get_by_role("button", name="Continue", exact=True).click()
     page.get_by_role("textbox", name="Password").click()
     page.get_by_role("textbox", name="Password").fill(TEST_PASSWORD)
-    page.get_by_role("button", name="Continue").click()
+    page.get_by_role("button", name="Continue", exact=True).click()
     expect(page.get_by_test_id("sign_out")).not_to_be_visible()
 
     page.pause()
@@ -164,10 +165,10 @@ def sign_in(page: Page, create_test_user: User) -> User:
     page.get_by_role("button", name="Sign in").click()
     page.get_by_role("textbox", name="Email address").click()
     page.get_by_role("textbox", name="Email address").fill(TEST_EMAIL)
-    page.get_by_role("button", name="Continue").click()
+    page.get_by_role("button", name="Continue", exact=True).click()
     page.get_by_role("textbox", name="Password").click()
     page.get_by_role("textbox", name="Password").fill(TEST_PASSWORD)
-    page.get_by_role("button", name="Continue").click()
+    page.get_by_role("button", name="Continue", exact=True).click()
     # Wait until we are back at the demo page signed in
     expect(page.get_by_test_id("sign_out")).not_to_be_visible()
 

@@ -36,14 +36,17 @@ tasks:
   bump-patch:
     cmds:
       - uv run scripts/bump-version.py patch pyproject.toml
+      - uv lock
 
   bump-minor:
     cmds:
       - uv run scripts/bump-version.py minor pyproject.toml
+      - uv lock
 
   bump-major:
     cmds:
       - uv run scripts/bump-version.py major pyproject.toml
+      - uv lock
 
   push-tag:
     preconditions:

@@ -188,19 +188,25 @@ def test_sign_out(page: Page):
 @pytest.mark.usefixtures("sign_in")
 def test_signed_in_state(page: Page):
     """Check a signed-in user sees expected state of app."""
-    page.pause()
-    page.get_by_test_id("clerk_loaded_and_signed_in/out_areas").hover()
-    expect(page.locator("#is_hydrated")).to_contain_text("true")
-    expect(page.locator("#auth_checked")).to_contain_text("true")
-    expect(page.locator("#is_signed_in")).to_contain_text("true")
-    expect(page.locator("#user_id")).to_contain_text("user_2uoxkuwtmCo96yXK1OYP5qN2MnL")
-
     page.get_by_test_id("clerkstate_variables_and_methods").hover()
-    expect(page.locator("#you_are_signed_in")).to_contain_text("You are signed in.")
-    expect(page.locator("#you_are_signed_in")).to_be_visible()
-    expect(page.locator("#you_are_signed_out")).not_to_be_visible()
+    page.pause()
+    expect(page.get_by_test_id("is_hydrated")).to_contain_text("true")
+    expect(page.get_by_test_id("auth_checked")).to_contain_text("true")
+    expect(page.get_by_test_id("is_signed_in")).to_contain_text("true")
+    expect(page.get_by_test_id("user_id")).to_contain_text(
+        "user_2uoxkuwtmCo96yXK1OYP5qN2MnL"
+    )
+
+    page.get_by_test_id("clerk_loaded_and_signed_in_out_areas").hover()
+    page.pause()
+    expect(page.get_by_test_id("you_are_signed_in")).to_contain_text(
+        "You are signed in."
+    )
+    expect(page.get_by_test_id("you_are_signed_in")).to_be_visible()
+    expect(page.get_by_test_id("you_are_signed_out")).not_to_be_visible()
 
     page.get_by_test_id("better_on_load_handling").hover()
-    expect(page.locator("#info_from_load")).to_contain_text(
+    page.pause()
+    expect(page.get_by_test_id("info_from_load")).to_contain_text(
         "clerkstate.auth_checked: True"
     )

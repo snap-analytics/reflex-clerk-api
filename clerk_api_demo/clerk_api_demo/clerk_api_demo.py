@@ -267,7 +267,6 @@ def demo_card(
         max_width="30em",
         _hover=dict(background=rx.color("gray", 4)),
         height="100%",
-        data_testid=heading.lower().replace(" ", "_"),
     )
 
     content_popover_desktop = rx.hover_card.root(
@@ -290,9 +289,10 @@ def demo_card(
             demo,
         ),
     )
-    return rx.fragment(
+    return rx.box(
         rx.desktop_only(content_popover_desktop),
         rx.mobile_and_tablet(content_popover_mobile),
+        data_testid=heading.lower().replace(" ", "_").replace("/", "_"),
     )
 
 

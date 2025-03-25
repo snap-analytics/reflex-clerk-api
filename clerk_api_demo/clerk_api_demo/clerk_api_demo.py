@@ -277,6 +277,7 @@ def demo_card(
             demo,
             avoid_collisions=True,
         ),
+        data_testid=heading.lower().replace(" ", "_").replace("/", "_"),
     )
     content_popover_mobile = rx.popover.root(
         rx.popover.trigger(
@@ -289,10 +290,9 @@ def demo_card(
             demo,
         ),
     )
-    return rx.box(
+    return rx.fragment(
         rx.desktop_only(content_popover_desktop),
         rx.mobile_and_tablet(content_popover_mobile),
-        data_testid=heading.lower().replace(" ", "_").replace("/", "_"),
     )
 
 

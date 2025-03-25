@@ -588,7 +588,7 @@ def demo_header() -> rx.Component:
                         clerk.signed_out(
                             rx.hstack(
                                 clerk.sign_in_button(rx.button("Sign in")),
-                                rx.link(rx.button("Sign up"), href="/sign-up"),
+                                clerk.sign_up_button(rx.button("Sign up")),
                             ),
                         ),
                     ),

@@ -15,7 +15,12 @@ from .control_components import (
     signed_out,
 )
 from .pages import add_sign_in_page, add_sign_up_page
-from .unstyled_components import SignInButton, sign_in_button, sign_out_button
+from .unstyled_components import (
+    SignInButton,
+    sign_in_button,
+    sign_out_button,
+    sign_up_button,
+)
 from .user_components import user_button, user_profile
 
 __all__ = [
@@ -35,6 +40,7 @@ __all__ = [
     "sign_in_button",
     "sign_out_button",
     "sign_up",
+    "sign_up_button",
     "signed_in",
     "signed_out",
     "user_button",

@@ -272,12 +272,12 @@ def demo_card(
     content_popover_desktop = rx.hover_card.root(
         rx.hover_card.trigger(
             card,
+            data_testid=heading.lower().replace(" ", "_").replace("/", "_"),
         ),
         rx.hover_card.content(
             demo,
             avoid_collisions=True,
         ),
-        data_testid=heading.lower().replace(" ", "_").replace("/", "_"),
     )
     content_popover_mobile = rx.popover.root(
         rx.popover.trigger(

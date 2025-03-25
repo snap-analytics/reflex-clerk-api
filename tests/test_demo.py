@@ -108,6 +108,7 @@ def test_render(page: Page):
 
     I.e. Check components are visible.
     """
+    page.pause()
     expect(page.locator('[id="__next"]')).to_contain_text("reflex-clerk-api demo")
     expect(page.locator('[id="__next"]')).to_contain_text("Getting Started")
     expect(page.locator('[id="__next"]')).to_contain_text("Demos")
@@ -153,7 +154,7 @@ def test_sign_in(page: Page):
     page.get_by_role("textbox", name="Password").click()
     page.get_by_role("textbox", name="Password").fill(TEST_PASSWORD)
     page.get_by_role("button", name="Continue").click()
-    expect(page.locator('[id="__next"]')).to_contain_text("Sign out")
+    expect(page.get_by_test_id("sign_out")).not_to_be_visible()
 
     page.pause()
 
@@ -171,7 +172,7 @@ def sign_in(page: Page, create_test_user: User) -> User:
     page.get_by_role("textbox", name="Password").fill(TEST_PASSWORD)
     page.get_by_role("button", name="Continue").click()
     # Wait until we are back at the demo page signed in
-    expect(page.locator('[id="__next"]')).to_contain_text("Sign out")
+    expect(page.get_by_test_id("sign_out")).not_to_be_visible()
 
     return create_test_user
 
@@ -180,9 +181,9 @@ def sign_in(page: Page, create_test_user: User) -> User:
 def test_sign_out(page: Page):
     """Check sign-out button signs out the user."""
     page.get_by_role("button", name="Sign out").click()
-    expect(page.locator('[id="__next"]')).to_contain_text("Sign in")
-    expect(page.locator('[id="__next"]')).to_contain_text("Sign up")
-    expect(page.locator('[id="__next"]')).not_to_contain_text("Sign out")
+    expect(page.get_by_test_id("sign_in")).to_be_visible()
+    expect(page.get_by_test_id("sign_up")).to_be_visible()
+    expect(page.get_by_test_id("sign_out")).not_to_be_visible()
 
 
 @pytest.mark.usefixtures("sign_in")

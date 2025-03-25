@@ -13,6 +13,10 @@ tasks:
     cmds:
       - uv run reflex run
 
+  run-docs:
+    cmds:
+      - uv run mkdocs serve
+
   test:
     cmds:
       - uv run pytest

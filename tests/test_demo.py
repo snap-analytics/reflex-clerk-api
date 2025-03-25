@@ -184,17 +184,15 @@ def test_sign_out(page: Page):
     expect(page.get_by_test_id("sign_out")).not_to_be_visible()
 
 
-@pytest.mark.usefixtures("sign_in")
-def test_signed_in_state(page: Page):
+def test_signed_in_state(page: Page, sign_in: User):
     """Check a signed-in user sees expected state of app."""
+    assert sign_in.id is not None
     page.get_by_test_id("clerkstate_variables_and_methods").hover()
     page.pause()
     expect(page.get_by_test_id("is_hydrated")).to_contain_text("true")
     expect(page.get_by_test_id("auth_checked")).to_contain_text("true")
     expect(page.get_by_test_id("is_signed_in")).to_contain_text("true")
-    expect(page.get_by_test_id("user_id")).to_contain_text(
-        "user_2uoxkuwtmCo96yXK1OYP5qN2MnL"
-    )
+    expect(page.get_by_test_id("user_id")).to_contain_text(sign_in.id)
 
     page.get_by_test_id("clerk_loaded_and_signed_in_out_areas").hover()
     page.pause()

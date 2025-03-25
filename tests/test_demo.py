@@ -15,6 +15,9 @@ load_dotenv()
 TEST_EMAIL = "ci-test+clerk_test@gmail.com"
 TEST_PASSWORD = "test-clerk-password"
 
+PAGE_LOAD_TIMEOUT = 10000 if not os.getenv("CI") else 30000
+INTERACTION_TIMEOUT = 2000 if not os.getenv("CI") else 10000
+
 
 @pytest.fixture(scope="session")
 def demo_app():
@@ -28,10 +31,10 @@ def page(
     request: pytest.FixtureRequest, demo_app: AppHarness, page: Page
 ) -> Iterator[Page]:
     """Load the demo app main page."""
-    page.set_default_timeout(20000)
+    page.set_default_timeout(PAGE_LOAD_TIMEOUT)
     assert demo_app.frontend_url is not None
     page.goto(demo_app.frontend_url)
-    page.set_default_timeout(2000)
+    page.set_default_timeout(INTERACTION_TIMEOUT)
     yield page
     if request.session.testsfailed:
         print("Test failed. Saving screenshot as playwright_test_error.png")

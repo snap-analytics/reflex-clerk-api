@@ -15,7 +15,8 @@ tasks:
 
   run-docs:
     cmds:
-      - uv run mkdocs serve
+      # Use non-default port to not clash with reflex backend
+      - uv run mkdocs serve -a localhost:9000
 
   test:
     deps:

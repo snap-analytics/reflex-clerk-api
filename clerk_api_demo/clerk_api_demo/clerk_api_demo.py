@@ -226,7 +226,7 @@ def migration_notes() -> rx.Component:
             ),
             rx.list_item(
                 rx.markdown(
-                    "use `await clerk.get_user()` inside event handlers instead of `clerk_state.user` to explicitly retrieve user information when desired"
+                    "use `await clerk.get_user(self)` inside event handlers instead of `clerk_state.user` to explicitly retrieve user information when desired"
                 )
             ),
             rx.list_item(

@@ -8,15 +8,24 @@ site_author: Tim Child
 copyright: Copyright 2025
 
 nav:
-  - Home: about.md
-  - Features: features.md
+  - About: about.md
   - Getting Started: getting_started.md
+  - Reference:
+      - full_docs/clerk_provider.md
+      - full_docs/control_components.md
+      - full_docs/unstyled_components.md
+      - full_docs/pages.md
+      - full_docs/user_components.md
+      - full_docs/authentication_components.md
+
+  - Features: features.md
   - Migrating: migrating.md
 
 theme:
   name: material
   features:
     - content.action.edit
+    - navigation.instant
   palette:
     - scheme: slate
       media: "(prefers-color-scheme: dark)"
@@ -39,3 +48,8 @@ plugins:
   # - sitemap
   - mkdocstrings:
       default_handler: python
+      handlers:
+        python:
+          options:
+            members_order: source
+            show_symbol_type_heading: true

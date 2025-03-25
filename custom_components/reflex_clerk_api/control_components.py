@@ -2,10 +2,14 @@ from reflex_clerk_api.base import ClerkBase
 
 
 class ClerkLoaded(ClerkBase):
+    """Only renders children after authentication has been checked."""
+
     tag = "ClerkLoaded"
 
 
 class ClerkLoading(ClerkBase):
+    """Only renders childen while Clerk authenticates the user."""
+
     tag = "ClerkLoading"
 
 
@@ -14,14 +18,20 @@ class Protect(ClerkBase):
 
 
 class RedirectToSignIn(ClerkBase):
+    """Immediately redirects the user to the sign in page when rendered."""
+
     tag = "RedirectToSignIn"
 
 
 class RedirectToSignUp(ClerkBase):
+    """Immediately redirects the user to the sign up page when rendered."""
+
     tag = "RedirectToSignUp"
 
 
 class RedirectToUserProfile(ClerkBase):
+    """Immediately redirects the user to their profile page when rendered."""
+
     tag = "RedirectToUserProfile"
 
 
@@ -34,10 +44,14 @@ class RedirectToCreateOrganization(ClerkBase):
 
 
 class SignedIn(ClerkBase):
+    """Only renders children when the user is signed in."""
+
     tag = "SignedIn"
 
 
 class SignedOut(ClerkBase):
+    """Only renders children when the user is signed out."""
+
     tag = "SignedOut"
 
 

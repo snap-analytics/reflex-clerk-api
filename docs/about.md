@@ -34,6 +34,8 @@ This packages:
 - Supports Reflex 0.7.x.
 - Provides helper functions for handling `on_load` events that require knowledge of user authentication status.
 - Allows registration of event handlers to be called on authentication changes (login/logout).
+- Is fully typed
+- Is tested against python versions 3.10 - 3.13
 
 ## Demo
 
@@ -46,7 +48,7 @@ The demo uses a development Clerk account so you can try out sign-up/sign-in etc
 Additionally, you can find the following resources in the documentation:
 
 - [Getting Started](getting_started.md): Learn how to install and set up the Reflex Clerk API.
-- [Migration Guide](migration.md): Notes on migrating from the `Kroo/reflex-clerk` package.
+- [Migration Guide](migrating.md): Notes on migrating from the `Kroo/reflex-clerk` package.
 - [Features](features.md): More details on the additional features provided.
 
 ## Not yet implemented

@@ -121,4 +121,4 @@ clerk.add_sign_up_page(app)
 
 - Explore more features of the Reflex Clerk API in the [Features](features.md) section.
 - Visit the [Demo](https://reflex-clerk-api-demo.adventuresoftim.com) to see the Reflex Clerk API in action.
-- Check out the [Migration Guide](migration.md) if you're migrating from the `Kroo/reflex-clerk` package.
+- Check out the [Migration Guide](migrating.md) if you're migrating from the `Kroo/reflex-clerk` package.

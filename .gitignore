@@ -5,3 +5,4 @@ dist/
 .env
 site/
 .states/
+playwright_test_error.png

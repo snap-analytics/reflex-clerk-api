@@ -20,7 +20,7 @@ tasks:
 
   publish-docs:
     cmds:
-      - uv run mkdocs gh-deploy
+      - uv run mkdocs gh-deploy --force
 
   test:
     deps:

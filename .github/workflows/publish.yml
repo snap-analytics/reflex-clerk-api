@@ -50,4 +50,6 @@ jobs:
         run: task publish
 
       - name: Publish docs
+        permissions:
+          contents: write
         run: task publish-docs

@@ -243,6 +243,19 @@ def data_list_item(label: str, value: rx.Component | str) -> rx.Component:
     )
 
 
+close_icon = rx.icon(
+    "x",
+    position="absolute",
+    top="8px",
+    right="8px",
+    background_color=rx.color("tomato", 6),
+    _hover=dict(background_color=rx.color("tomato", 7)),
+    padding="2px",
+    border_radius="5px",
+    z_index="5",
+)
+
+
 def demo_card(
     heading: str, description: str | rx.Component, demo: rx.Component
 ) -> rx.Component:
@@ -253,9 +266,10 @@ def demo_card(
         ),
         max_width="30em",
         _hover=dict(background=rx.color("gray", 4)),
+        height="100%",
     )
 
-    content_popover = rx.hover_card.root(
+    content_popover_desktop = rx.hover_card.root(
         rx.hover_card.trigger(
             card,
         ),
@@ -264,7 +278,21 @@ def demo_card(
             avoid_collisions=True,
         ),
     )
-    return content_popover
+    content_popover_mobile = rx.popover.root(
+        rx.popover.trigger(
+            card,
+        ),
+        rx.popover.content(
+            rx.popover.close(
+                close_icon,
+            ),
+            demo,
+        ),
+    )
+    return rx.fragment(
+        rx.desktop_only(content_popover_desktop),
+        rx.mobile_and_tablet(content_popover_mobile),
+    )
 
 
 def current_clerk_state_values() -> rx.Component:
@@ -519,13 +547,15 @@ def user_profile_demo() -> rx.Component:
             rx.code("clerk.user_profile"),
             " component that renders a UI within your page.",
         ),
-        rx.dialog.root(
-            rx.dialog.trigger(
-                rx.button("Show in dialog"),
+        rx.popover.root(
+            rx.popover.trigger(
+                rx.button("Show in popover"),
             ),
-            rx.dialog.content(
+            rx.popover.content(
+                rx.popover.close(
+                    close_icon,
+                ),
                 clerk.user_profile(),
-                width="1000px",
                 max_width="1000px",
             ),
         ),
@@ -545,27 +575,9 @@ def user_profile_demo() -> rx.Component:
 
 
 def demo_header() -> rx.Component:
-    # rx.markdown(
-    #     dedent(
-    #         """\
-    #     The demos below are using a development Clerk API key, so you can try out everything with fake credentials.
-    #
-    #     To simply log in, you can use the email/password combination:
-    #
-    #     - username: `test+clerk_test@gmail.com`
-    #     - password: `test-clerk-password`
-    #
-    #     Or if you want to try signing up, you can use any email with `+clerk_test` appended to it. E.g., `myrandomemail+clerk_test@anydomain.com`.
-    #
-    #     Use any password you like, and then the verification code will be `424242`.
-    #
-    #     More info on test credentials can be found [in the Clerk documentation](https://clerk.com/docs/testing/test-emails-and-phones).
-    #     """,
-    #     )
-    # ),
     return rx.vstack(
         rx.heading("Demos", size="6"),
-        rx.hstack(
+        rx.grid(
             rx.vstack(
                 rx.text(
                     "The demos below are using a development Clerk API key, so you can try out everything with fake credentials."
@@ -573,7 +585,6 @@ def demo_header() -> rx.Component:
                 rx.text(
                     "To simply log in, you can use the email/password combination."
                 ),
-                width="50%",
             ),
             rx.card(
                 rx.vstack(
@@ -593,8 +604,8 @@ def demo_header() -> rx.Component:
                         ),
                     ),
                 ),
-                width="50%",
             ),
+            columns=rx.breakpoints(initial="1", md="2"),
         ),
         rx.text(
             "Or if you want test signing up, you can use any email with ",
@@ -643,6 +654,7 @@ def index() -> rx.Component:
                     user_profile_demo(),
                     columns=rx.breakpoints(initial="1", sm="2", md="3", xl="4"),
                     spacing="4",
+                    align="stretch",
                 ),
                 align="center",
                 spacing="7",

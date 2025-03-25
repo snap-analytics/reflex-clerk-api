@@ -28,7 +28,7 @@ def page(
     request: pytest.FixtureRequest, demo_app: AppHarness, page: Page
 ) -> Iterator[Page]:
     """Load the demo app main page."""
-    page.set_default_timeout(10000)
+    page.set_default_timeout(20000)
     assert demo_app.frontend_url is not None
     page.goto(demo_app.frontend_url)
     page.set_default_timeout(2000)

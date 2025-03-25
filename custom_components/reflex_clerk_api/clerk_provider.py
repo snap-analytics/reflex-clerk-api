@@ -447,7 +447,6 @@ def clerk_provider(
     Args:
         secret_key: Your Clerk app's Secret Key, which you can find in the Clerk Dashboard. It will be prefixed with sk_test_ in development instances and sk_live_ in production instances. Do not expose this on the frontend with a public environment variable.
     """
-    logging.critical("running clerk_provider")
     if secret_key:
         ClerkState._set_secret_key(secret_key)
 

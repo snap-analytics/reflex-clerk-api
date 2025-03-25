@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
 
 site_name: Reflex Clerk API Docs
-site_url: https://reflex-clerk-api-demo.adventuresoftim.com
+site_url: https://timchild.github.io/reflex-clerk-api
 repo_url: https://github.com/TimChild/reflex-clerk-api
 site_description: Documentation reflex-clerk-api
 site_author: Tim Child

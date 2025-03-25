@@ -42,3 +42,22 @@ def index() -> rx.Component:
         register_user_state=True,
     )
 ```
+
+## Contributing
+
+Feel free to open issues or make PRs.
+
+Usual process for contributing:
+
+- Fork the repo
+- Make changes on a feature branch
+- Ideally, add tests for any changes (this will mean your changes don't get broken in the future too).
+- Submit a PR
+
+I use [Taskfile](https://taskfile.dev/) (similar to `makefile`) to make common tasks easier. If you have that installed, you can run:
+
+- `task install` -- Install dev dependencies and pre-commit.
+- `task run` -- Run the demo locally
+- `task run-docs` -- Run the docs locally
+- `task test` -- Run tests
+- `task bump-patch/minor/major` -- Bump the version (`patch` for a bug fix, `minor` for an added feature).

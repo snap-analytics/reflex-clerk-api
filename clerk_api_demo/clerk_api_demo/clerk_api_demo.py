@@ -605,7 +605,7 @@ def demo_header() -> rx.Component:
                     ),
                 ),
             ),
-            columns=rx.breakpoints(initial="1", md="2"),
+            columns=rx.breakpoints(initial="1", sm="2"),
         ),
         rx.text(
             "Or if you want test signing up, you can use any email with ",

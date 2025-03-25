@@ -267,6 +267,7 @@ def demo_card(
         max_width="30em",
         _hover=dict(background=rx.color("gray", 4)),
         height="100%",
+        data_testid=heading.lower().replace(" ", "_"),
     )
 
     content_popover_desktop = rx.hover_card.root(
@@ -299,14 +300,22 @@ def current_clerk_state_values() -> rx.Component:
     demo = rx.vstack(
         rx.text("State variables:"),
         rx.data_list.root(
-            data_list_item("State.is_hydrated", rx.text(State.is_hydrated)),
             data_list_item(
-                "ClerkState.auth_checked", rx.text(clerk.ClerkState.auth_checked)
+                "State.is_hydrated",
+                rx.text(State.is_hydrated, data_testid="is_hydrated"),
             ),
             data_list_item(
-                "ClerkState.is_logged_in", rx.text(clerk.ClerkState.is_signed_in)
+                "ClerkState.auth_checked",
+                rx.text(clerk.ClerkState.auth_checked, data_testid="auth_checked"),
             ),
-            data_list_item("ClerkState.user_id", rx.text(clerk.ClerkState.user_id)),
+            data_list_item(
+                "ClerkState.is_logged_in",
+                rx.text(clerk.ClerkState.is_signed_in, data_testid="is_signed_in"),
+            ),
+            data_list_item(
+                "ClerkState.user_id",
+                rx.text(clerk.ClerkState.user_id, data_testid="user_id"),
+            ),
         ),
         rx.divider(),
         rx.text("State methods:"),
@@ -347,6 +356,7 @@ def on_load_demo() -> rx.Component:
             rx.divider(),
             rx.text(
                 State.info_from_load,
+                data_testid="info_from_load",
             ),
         )
     )
@@ -358,7 +368,10 @@ def on_load_demo() -> rx.Component:
                 " of `clerk.on_load` wrapper:",
             ),
             rx.divider(),
-            rx.text(State.info_from_load_without_wrapper),
+            rx.text(
+                State.info_from_load_without_wrapper,
+                data_testid="info_from_load_without_wrapper",
+            ),
         )
     )
     demo = rx.vstack(
@@ -420,7 +433,7 @@ def clerk_loaded_demo() -> rx.Component:
             rx.text("You'll only see content below if you are signed in"),
             rx.divider(),
             clerk.signed_in(
-                "You are signed in.",
+                rx.text("You are signed in.", data_testid="you_are_signed_in"),
                 clerk.sign_out_button(rx.button("Sign out", width="100%")),
             ),
         )
@@ -430,7 +443,7 @@ def clerk_loaded_demo() -> rx.Component:
             rx.text("You'll only see content below if you are signed out"),
             rx.divider(),
             clerk.signed_out(
-                "You are signed out.",
+                rx.text("You are signed out.", data_testid="you_are_signed_out"),
                 clerk.sign_in_button(rx.button("Sign in", width="100%")),
             ),
         )
@@ -557,6 +570,7 @@ def user_profile_demo() -> rx.Component:
                 ),
                 clerk.user_profile(),
                 max_width="1000px",
+                avoid_collisions=True,
             ),
         ),
         rx.text(
@@ -595,11 +609,19 @@ def demo_header() -> rx.Component:
                         data_list_item("password", rx.code("test-clerk-password")),
                     ),
                     rx.hstack(
-                        clerk.signed_in(clerk.sign_out_button(rx.button("Sign out"))),
+                        clerk.signed_in(
+                            clerk.sign_out_button(
+                                rx.button("Sign out", data_testid="sign_out")
+                            )
+                        ),
                         clerk.signed_out(
                             rx.hstack(
-                                clerk.sign_in_button(rx.button("Sign in")),
-                                clerk.sign_up_button(rx.button("Sign up")),
+                                clerk.sign_in_button(
+                                    rx.button("Sign in", data_testid="sign_in")
+                                ),
+                                clerk.sign_up_button(
+                                    rx.button("Sign up", data_testid="sign_up")
+                                ),
                             ),
                         ),
                     ),

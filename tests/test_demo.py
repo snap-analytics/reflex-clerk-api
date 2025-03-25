@@ -5,7 +5,7 @@ from typing import Iterator
 
 import clerk_backend_api
 import pytest
-from clerk_backend_api import Clerk
+from clerk_backend_api import Clerk, User
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 from reflex.testing import AppHarness
@@ -47,7 +47,7 @@ def clerk_client() -> Iterator[Clerk]:
 
 
 @pytest.fixture
-def create_test_user(clerk_client: Clerk) -> clerk_backend_api.models.User:
+def create_test_user(clerk_client: Clerk) -> User:
     """Creates (or checks already exists) a test clerk user.
 
     This can then be used to sign in during tests.
@@ -96,7 +96,7 @@ def create_test_user(clerk_client: Clerk) -> clerk_backend_api.models.User:
     return res
 
 
-def test_test_user(create_test_user: clerk_backend_api.models.User):
+def test_test_user(create_test_user: User):
     """Check the test user was either created or found correctly."""
     user = create_test_user
     assert user.email_addresses is not None
@@ -121,7 +121,7 @@ def test_render(page: Page):
     expect(page.locator('[id="__next"]')).to_contain_text("On auth change callbacks")
     expect(page.locator('[id="__next"]')).to_contain_text("ClerkUser info")
     expect(page.locator('[id="__next"]')).to_contain_text("Sign-in and sign-up pages")
-    expect(page.locator('[id="__next"]')).to_contain_text("User rofile management")
+    expect(page.locator('[id="__next"]')).to_contain_text("User profile management")
 
 
 def test_sign_up(page: Page):
@@ -138,6 +138,7 @@ class SetupError(Exception):
     """Error raised when the test setup is incorrect."""
 
 
+@pytest.mark.usefixtures("create_test_user")
 def test_sign_in(page: Page):
     """Check sign-in button takes you to a sign-in form.
 
@@ -155,3 +156,51 @@ def test_sign_in(page: Page):
     expect(page.locator('[id="__next"]')).to_contain_text("Sign out")
 
     page.pause()
+
+
+@pytest.fixture
+def sign_in(page: Page, create_test_user: User) -> User:
+    """Sign in the test user."""
+    assert create_test_user.email_addresses is not None
+    assert create_test_user.email_addresses[0].email_address == TEST_EMAIL
+    page.get_by_role("button", name="Sign in").click()
+    page.get_by_role("textbox", name="Email address").click()
+    page.get_by_role("textbox", name="Email address").fill(TEST_EMAIL)
+    page.get_by_role("button", name="Continue").click()
+    page.get_by_role("textbox", name="Password").click()
+    page.get_by_role("textbox", name="Password").fill(TEST_PASSWORD)
+    page.get_by_role("button", name="Continue").click()
+    # Wait until we are back at the demo page signed in
+    expect(page.locator('[id="__next"]')).to_contain_text("Sign out")
+
+    return create_test_user
+
+
+@pytest.mark.usefixtures("sign_in")
+def test_sign_out(page: Page):
+    """Check sign-out button signs out the user."""
+    page.get_by_role("button", name="Sign out").click()
+    expect(page.locator('[id="__next"]')).to_contain_text("Sign in")
+    expect(page.locator('[id="__next"]')).to_contain_text("Sign up")
+    expect(page.locator('[id="__next"]')).not_to_contain_text("Sign out")
+
+
+@pytest.mark.usefixtures("sign_in")
+def test_signed_in_state(page: Page):
+    """Check a signed-in user sees expected state of app."""
+    page.pause()
+    page.get_by_test_id("clerk_loaded_and_signed_in/out_areas").hover()
+    expect(page.locator("#is_hydrated")).to_contain_text("true")
+    expect(page.locator("#auth_checked")).to_contain_text("true")
+    expect(page.locator("#is_signed_in")).to_contain_text("true")
+    expect(page.locator("#user_id")).to_contain_text("user_2uoxkuwtmCo96yXK1OYP5qN2MnL")
+
+    page.get_by_test_id("clerkstate_variables_and_methods").hover()
+    expect(page.locator("#you_are_signed_in")).to_contain_text("You are signed in.")
+    expect(page.locator("#you_are_signed_in")).to_be_visible()
+    expect(page.locator("#you_are_signed_out")).not_to_be_visible()
+
+    page.get_by_test_id("better_on_load_handling").hover()
+    expect(page.locator("#info_from_load")).to_contain_text(
+        "clerkstate.auth_checked: True"
+    )

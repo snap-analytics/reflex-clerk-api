@@ -4,3 +4,4 @@ dist/
 *.py[cod]
 .env
 site/
+.states/

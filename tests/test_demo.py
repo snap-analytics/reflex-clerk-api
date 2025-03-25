@@ -112,17 +112,14 @@ def test_render(page: Page):
     expect(page.locator('[id="__next"]')).to_contain_text("reflex-clerk-api demo")
     expect(page.locator('[id="__next"]')).to_contain_text("Getting Started")
     expect(page.locator('[id="__next"]')).to_contain_text("Demos")
-    expect(page.locator('[id="__next"]')).to_contain_text(
-        "ClerkState variables and methods"
-    )
-    expect(page.locator('[id="__next"]')).to_contain_text(
-        "Clerk loaded and signed in/out areas"
-    )
-    expect(page.locator('[id="__next"]')).to_contain_text("Better on_load handling")
-    expect(page.locator('[id="__next"]')).to_contain_text("On auth change callbacks")
-    expect(page.locator('[id="__next"]')).to_contain_text("ClerkUser info")
-    expect(page.locator('[id="__next"]')).to_contain_text("Sign-in and sign-up pages")
-    expect(page.locator('[id="__next"]')).to_contain_text("User profile management")
+
+    expect(page.get_by_test_id("clerkstate_variables_and_methods")).to_be_visible()
+    expect(page.get_by_test_id("clerk_loaded_and_signed_in_out_areas")).to_be_visible()
+    expect(page.get_by_test_id("better_on_load_handling")).to_be_visible()
+    expect(page.get_by_test_id("on_auth_change_callbacks")).to_be_visible()
+    expect(page.get_by_test_id("clerkuser_info")).to_be_visible()
+    expect(page.get_by_test_id("sign-in_and_sign-up_pages")).to_be_visible()
+    expect(page.get_by_test_id("user_profile_management")).to_be_visible()
 
 
 def test_sign_up(page: Page):

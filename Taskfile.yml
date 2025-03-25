@@ -18,6 +18,9 @@ tasks:
       - uv run mkdocs serve
 
   test:
+    deps:
+      - task: lint
+      - task: typecheck
     cmds:
       - uv run pytest
 

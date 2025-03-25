@@ -6,6 +6,10 @@ See a [Demo](https://reflex-clerk-api-demo.adventuresoftim.com).
 
 See the [Docs](https://timchild.github.io/reflex-clerk-api/about/)
 
+![Test Status](https://github.com/TimChild/reflex-clerk-api/actions/workflows/ci.yml/badge.svg)
+![PyPi publish Status](https://github.com/TimChild/reflex-clerk-api/actions/workflows/publish.yml/badge.svg)
+![Demo Deploy Status](https://github.com/TimChild/reflex-clerk-api/actions/workflows/deploy.yml/badge.svg)
+
 ## Installation
 
 Any of:

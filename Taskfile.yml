@@ -39,18 +39,21 @@ tasks:
       - uv run pyright
 
   bump-patch:
+    dir: "{{.TASKFILE_DIR}}"
     cmds:
-      - uv run scripts/bump-version.py patch pyproject.toml
+      - uv run scripts/bump-version.py patch pyproject.toml README.md
       - uv lock
 
   bump-minor:
+    dir: "{{.TASKFILE_DIR}}"
     cmds:
-      - uv run scripts/bump-version.py minor pyproject.toml
+      - uv run scripts/bump-version.py minor pyproject.toml README.md
       - uv lock
 
   bump-major:
+    dir: "{{.TASKFILE_DIR}}"
     cmds:
-      - uv run scripts/bump-version.py major pyproject.toml
+      - uv run scripts/bump-version.py major pyproject.toml README.md
       - uv lock
 
   push-tag:

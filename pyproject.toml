@@ -4,19 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reflex-clerk-api"
-version = "0.1.8"
+version = "0.1.9"
 description = "Reflex custom component wrapping @clerk/clerk-react and integrating the clerk-backend-api"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.10"
 authors = [{ name = "Tim Child", email = "timjchild@gmail.com" }]
 keywords = ["reflex","reflex-custom-components", "clerk", "clerk-backend-api"]
-
-[project.urls]
-documentation = "https://timchild.github.io/reflex-clerk-api/about/"
-repository = "https://github.com/TimChild/reflex-clerk-api"
-issues = "https://github.com/TimChild/reflex-clerk-api/issues"
-homepage = "https://reflex-clerk-api-demo.adventuresoftim.com"
 
 dependencies = [
     "authlib>=1.5.1",
@@ -34,6 +28,12 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     # "Framework :: Reflex",  # Should be added once this is accepted
 ]
+
+[project.urls]
+documentation = "https://timchild.github.io/reflex-clerk-api/about/"
+repository = "https://github.com/TimChild/reflex-clerk-api"
+issues = "https://github.com/TimChild/reflex-clerk-api/issues"
+homepage = "https://reflex-clerk-api-demo.adventuresoftim.com"
 
 [project.optional-dependencies]
 dev = ["build", "twine"]

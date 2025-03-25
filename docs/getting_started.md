@@ -1,6 +1,14 @@
 # Getting Started with Reflex Clerk API
 
-Welcome to the getting started guide for the Reflex Clerk API! This guide will walk you through the installation process and the basic setup required to integrate Clerk authentication into your Reflex app.
+Welcome to the getting started guide for the `reflex-clerk-api`!
+
+You can add `Clerk` user authentication to your app for free (up to 10,000 users) ([Clerk Pricing](https://clerk.com/pricing)).
+
+This covers the basics to add authentication to your Reflex app.
+
+## Clerk API
+
+Sign up for a Clerk account [here](https://dashboard.clerk.com/sign-up).
 
 ## Installation
 

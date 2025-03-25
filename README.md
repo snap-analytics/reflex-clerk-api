@@ -2,7 +2,7 @@
 ![PyPi publish Status](https://github.com/TimChild/reflex-clerk-api/actions/workflows/publish.yml/badge.svg)
 ![Demo Deploy Status](https://github.com/TimChild/reflex-clerk-api/actions/workflows/deploy.yml/badge.svg)
 
-# clerk-api
+# reflex-clerk-api
 
 A Reflex custom component for integrating Clerk authentication into a Reflex application.
 

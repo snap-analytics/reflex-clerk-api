@@ -48,3 +48,6 @@ jobs:
 
       - name: Publish
         run: task publish
+
+      - name: Publish docs
+        run: task publish-docs

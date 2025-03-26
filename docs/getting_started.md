@@ -88,6 +88,17 @@ The `publishable_key` and `secret_key` can be obtained from your [Clerk dashboar
 
     The `register_user_state` parameter is optional. Setting this to `True` enables the `clerk.ClerkUser` state which can be used to access or display basic user information.
 
+**alternatively**
+
+Wrap the entire app (all pages) via:
+
+```python
+
+clerk.wrap_app(app, publishable_key=...)
+```
+
+Taking the same arguments as `clerk.clerk_provider`.
+
 ### Environment Variables
 
 A good way to provide the keys is via environment variables (to avoid accidentally sharing them). You can do this by creating a `.env` file in the root of your project with:

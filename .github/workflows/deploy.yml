@@ -5,6 +5,7 @@ on:
     workflows: ["Publish"]
     types:
       - completed
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

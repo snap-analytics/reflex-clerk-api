@@ -3,7 +3,7 @@ import logging
 import os
 import time
 import uuid
-from typing import Any, ClassVar, TypeVar
+from typing import Any, Callable, ClassVar, TypeVar
 
 import authlib.jose.errors as jose_errors
 import clerk_backend_api
@@ -11,9 +11,10 @@ import reflex as rx
 from authlib.jose import JWTClaims, jwt
 from reflex.event import EventCallback, EventType, IndividualEventType
 from reflex.utils.exceptions import ImmutableStateError
-from reflex.utils.imports import ImportTypes
 
 from reflex_clerk_api.base import ClerkBase
+
+from .models import Appearance
 
 
 class ReflexClerkApiError(Exception):
@@ -292,7 +293,7 @@ class ClerkSessionSynchronizer(rx.Component):
     def add_imports(
         self,
     ) -> rx.ImportDict:
-        addl_imports: dict[str, ImportTypes] = {
+        addl_imports: rx.ImportDict = {
             "@clerk/clerk-react": ["useAuth"],
             "react": ["useContext", "useEffect"],
             "/utils/context": ["EventLoopContext"],
@@ -330,11 +331,23 @@ function ClerkSessionSynchronizer({ children }) {
         ]
 
 
+InitialState = dict[str, Any]
+# Should this be EventSpec instead?
+JSCallable = Callable
+
+
 class ClerkProvider(ClerkBase):
     """ClerkProvider component."""
 
     # The React component tag.
     tag = "ClerkProvider"
+
+    # NOTE: This might be relevant to getting apperance.base_theme to work.
+    # lib_dependencies: list[str] = ["@clerk/themes"]
+    # def add_imports(self) -> rx.ImportDict:
+    #     return {
+    #         "@clerk/themes": ["dark", "neobrutalism", "shadesOfPurple"],
+    #     }
 
     # The props of the React component.
     # Note: when Reflex compiles the component to Javascript,
@@ -350,10 +363,107 @@ class ClerkProvider(ClerkBase):
     # trigger to what will be passed to the backend event handler function.
     # on_change: rx.EventHandler[lambda e: [e]]
 
-    publishable_key: str
-    """
-    The Clerk Publishable Key for your instance. This can be found on the API keys page in the Clerk Dashboard.
-    """
+    after_multi_session_single_sign_out_url: str = ""
+    """The URL to navigate to after a successful sign-out from multiple sessions."""
+
+    after_sign_out_url: str = ""
+    """The full URL or path to navigate to after a successful sign-out."""
+
+    allowed_redirect_origins: list[str | str] = []
+    """An optional list of domains to validate user-provided redirect URLs against."""
+
+    allowed_redirect_protocols: list[str] = []
+    """An optional list of protocols to validate user-provided redirect URLs against."""
+
+    # NOTE: `apperance.base_theme` does not work yet.
+    appearance: Appearance | None = None
+    """Optional object to style your components. Will only affect Clerk components."""
+
+    clerk_js_url: str = ""
+    """Define the URL that @clerk/clerk-js should be hot-loaded from."""
+
+    clerk_js_variant: str | None = None
+    """If your web application only uses control components, set this to 'headless'."""
+
+    clerk_js_version: str = ""
+    """Define the npm version for @clerk/clerk-js."""
+
+    # domain: str | JSCallable[[str], bool] = ""
+    domain: str = ""
+    """Required if your application is a satellite application. Sets the domain."""
+
+    dynamic: bool = False
+    """(For Next.js only) Indicates whether Clerk should make dynamic auth data available."""
+
+    # initial_state: InitialState | None = None
+    # """Provide an initial state of the Clerk client during server-side rendering."""
+
+    # is_satellite: bool | JSCallable[[str], bool] = False
+    is_satellite: bool = False
+    """Whether the application is a satellite application."""
+
+    # Not implemented
+    # localization: Localization | None = None
+    # See https://clerk.com/docs/customization/localization#clerk-localizations for more info.
+    # """Optional object to localize your components. Will only affect Clerk components."""
+
+    nonce: str = ""
+    """Nonce value passed to the @clerk/clerk-js script tag for CSP implementation."""
+
+    publishable_key: str = ""
+    """The Clerk Publishable Key for your instance, found on the API keys page in the Clerk Dashboard."""
+
+    # proxy_url: str | JSCallable[[str], str] = ""
+    proxy_url: str = ""
+    """The URL of the proxy server to use for Clerk API requests."""
+
+    router_push: JSCallable[[str], None | Any] | None = None
+    """A function to push a new route into the history stack for navigation."""
+
+    router_replace: JSCallable[[str], None | Any] | None = None
+    """A function to replace the current route in the history stack for navigation."""
+
+    # sdk_metadata: dict[str, str] = {"name": "", "version": "", "environment": ""}
+    # """Contains information about the SDK that the host application is using."""
+
+    # select_initial_session: Callable[[Any], None | Any] | None = None
+    # """Function to override the default behavior of using the last active session during client initialization."""
+
+    sign_in_fallback_redirect_url: str = "/"
+    """The fallback URL to redirect to after the user signs in if there's no redirect_url in the path."""
+
+    sign_up_fallback_redirect_url: str = "/"
+    """The fallback URL to redirect to after the user signs up if there's no redirect_url in the path."""
+
+    sign_in_force_redirect_url: str = ""
+    """URL to always redirect to after the user signs in."""
+
+    sign_up_force_redirect_url: str = ""
+    """URL to always redirect to after the user signs up."""
+
+    sign_in_url: str = ""
+    """URL used for any redirects that might happen, pointing to your primary application on the client-side."""
+
+    sign_up_url: str = ""
+    """URL used for any redirects that might happen, pointing to your primary application on the client-side."""
+
+    standard_browser: bool = True
+    """Indicates whether ClerkJS assumes cookies can be set (browser setup)."""
+
+    support_email: str = ""
+    """Optional support email for display in authentication screens."""
+
+    sync_host: str = ""
+    """URL of the web application that the Chrome Extension will sync the authentication state from."""
+
+    telemetry: bool | dict[str, bool] | None = None
+    """Controls whether Clerk will collect telemetry data."""
+
+    touch_session: bool = True
+    """Indicates whether the Clerk Frontend API touch endpoint is called during page focus to keep the last active session alive."""
+
+    waitlist_url: str = ""
+    """The full URL or path to the waitlist page."""
 
     @classmethod
     def create(cls, *children, **props) -> "ClerkProvider":
@@ -364,6 +474,14 @@ class ClerkProvider(ClerkBase):
 
 
 def on_load(on_load_events: EventType[()] | None) -> list[IndividualEventType[()]]:
+    """Use this to wrap any on_load events that should happen after Clerk has checked authentication.
+
+    Args:
+        on_load_events: The events to run after authentication is checked.
+
+    Examples:
+        app.add_page(..., on_load=clerk.on_load(<events>))
+    """
     if on_load_events is None:
         return []
     on_load_list = (
@@ -439,13 +557,20 @@ def clerk_provider(
     publishable_key: str,
     secret_key: str | None = None,
     register_user_state: bool = False,
+    appearance: Appearance | None = None,
     **props,
 ) -> rx.Component:
     """
     Create a ClerkProvider component to wrap your app/page that uses clerk authentication.
 
+    Note: can also use `wrap_app` to wrap the entire app.
+
     Args:
+        children: The children components to wrap.
+        publishable_key: The Clerk Publishable Key for your instance.
         secret_key: Your Clerk app's Secret Key, which you can find in the Clerk Dashboard. It will be prefixed with sk_test_ in development instances and sk_live_ in production instances. Do not expose this on the frontend with a public environment variable.
+        register_user_state: Whether to register the ClerkUser state to automatically load user information on login.
+        appearance: Optional object to style your components. Will only affect Clerk components.
     """
     if secret_key:
         ClerkState._set_secret_key(secret_key)
@@ -456,5 +581,37 @@ def clerk_provider(
     return ClerkProvider.create(
         ClerkSessionSynchronizer.create(*children),
         publishable_key=publishable_key,
+        appearance=appearance,
         **props,
     )
+
+
+def wrap_app(
+    app: rx.App,
+    publishable_key: str,
+    secret_key: str,
+    register_user_state: bool = False,
+    appearance: Appearance | None = None,
+    **props,
+) -> rx.App:
+    """Wraps the entire app with the ClerkProvider.
+
+    For multi-page apps where all pages require Clerk authentication components (including knowing if the user
+    is **not** signed in).
+
+    Args:
+        app: The Reflex app to wrap.
+        publishable_key: The Clerk Publishable Key for your instance.
+        secret_key: Your Clerk app's Secret Key.
+        register_user_state: Whether to register the ClerkUser state to automatically load user information on login.
+    """
+    # 1 makes this the first wrapper around the content
+    #  (0 would place it after, 100 would also wrap default reflex wrappers)
+    app.app_wraps[(1, "ClerkProvider")] = lambda _: clerk_provider(
+        publishable_key=publishable_key,
+        secret_key=secret_key,
+        register_user_state=register_user_state,
+        appearance=appearance,
+        **props,
+    )
+    return app

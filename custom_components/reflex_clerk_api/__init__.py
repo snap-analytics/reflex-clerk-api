@@ -5,6 +5,7 @@ from .clerk_provider import (
     clerk_provider,
     on_load,
     register_on_auth_change_handler,
+    wrap_app,
 )
 from .control_components import (
     clerk_loaded,
@@ -45,4 +46,5 @@ __all__ = [
     "signed_out",
     "user_button",
     "user_profile",
+    "wrap_app",
 ]

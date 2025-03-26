@@ -20,4 +20,4 @@ if __name__ == "__main__":
         raise ValueError("Usage: get-version.py <pyproject.toml-path>")
     path = Path(args[1])
     assert path.exists()
-    print(get_version_from_pyproject_toml(path))
+    print(get_version_from_pyproject_toml(path))  # noqa: T201

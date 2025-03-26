@@ -1,4 +1,4 @@
-![Test Status](https://github.com/TimChild/reflex-clerk-api/actions/workflows/ci.yml/badge.svg?branch=v0.1.14)
+![Test Status](https://github.com/TimChild/reflex-clerk-api/actions/workflows/ci.yml/badge.svg?branch=v0.2.0)
 ![PyPi publish Status](https://github.com/TimChild/reflex-clerk-api/actions/workflows/publish.yml/badge.svg)
 ![Demo Deploy Status](https://github.com/TimChild/reflex-clerk-api/actions/workflows/deploy.yml/badge.svg)
 
@@ -65,3 +65,8 @@ I use [Taskfile](https://taskfile.dev/) (similar to `makefile`) to make common t
 - `task run-docs` -- Run the docs locally
 - `task test` -- Run tests
 - `task bump-patch/minor/major` -- Bump the version (`patch` for a bug fix, `minor` for an added feature).
+
+
+## TODO:
+
+- How should the `condition` and `fallback` props be defined on `Protect`? They are supposed to be `Javascript` and `JSX` respectively, but are just `str` for now... Is `Javascript` `rx.Script`? And `JSX` `rx.Component`?

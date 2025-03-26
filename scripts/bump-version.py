@@ -53,7 +53,7 @@ def main(part: LITERAL_PART, pyproject_path: Path, readme_path: Path) -> None:
     new_version = bump_version(current_version, part)
     update_toml_project_version(pyproject_path, new_version)
     update_readme_badge(readme_path, new_version)
-    print(f"Successfully bumped from {current_version} to {new_version}")
+    print(f"Successfully bumped from {current_version} to {new_version}")  # noqa: T201
 
 
 if __name__ == "__main__":

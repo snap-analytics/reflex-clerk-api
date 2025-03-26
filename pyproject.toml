@@ -49,7 +49,7 @@ venvPath = "."
 venv = ".venv"
 
 [tool.ruff.lint]
-extend-select = ["I", "RUF"]
+extend-select = ["I", "RUF", "T20"]
 ignore = ["RUF012"]
 
 [dependency-groups]

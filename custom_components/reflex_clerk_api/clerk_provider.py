@@ -15,6 +15,8 @@ from reflex.utils.imports import ImportTypes
 
 from reflex_clerk_api.base import ClerkBase
 
+from .models import Appearance
+
 
 class ReflexClerkApiError(Exception):
     pass
@@ -330,8 +332,6 @@ function ClerkSessionSynchronizer({ children }) {
         ]
 
 
-Appearance = dict[str, Any]
-Localization = dict[str, Any]
 InitialState = dict[str, Any]
 # Should this be EventSpec instead?
 JSCallable = Callable
@@ -342,6 +342,11 @@ class ClerkProvider(ClerkBase):
 
     # The React component tag.
     tag = "ClerkProvider"
+
+    def add_imports(self) -> rx.ImportDict:
+        return {
+            "@clerk/themes": ["dark", "neobrutalism", "shadesOfPurple"],
+        }
 
     # The props of the React component.
     # Note: when Reflex compiles the component to Javascript,
@@ -381,20 +386,24 @@ class ClerkProvider(ClerkBase):
     clerk_js_version: str = ""
     """Define the npm version for @clerk/clerk-js."""
 
-    domain: str | Callable[[str], bool] = ""
+    # domain: str | JSCallable[[str], bool] = ""
+    domain: str = ""
     """Required if your application is a satellite application. Sets the domain."""
 
     dynamic: bool = False
     """(For Next.js only) Indicates whether Clerk should make dynamic auth data available."""
 
-    initial_state: InitialState | None = None
-    """Provide an initial state of the Clerk client during server-side rendering."""
+    # initial_state: InitialState | None = None
+    # """Provide an initial state of the Clerk client during server-side rendering."""
 
-    is_satellite: bool | Callable[[str], bool] = False
+    # is_satellite: bool | JSCallable[[str], bool] = False
+    is_satellite: bool = False
     """Whether the application is a satellite application."""
 
-    localization: Localization | None = None
-    """Optional object to localize your components. Will only affect Clerk components."""
+    # Not implemented
+    # localization: Localization | None = None
+    # See https://clerk.com/docs/customization/localization#clerk-localizations for more info.
+    # """Optional object to localize your components. Will only affect Clerk components."""
 
     nonce: str = ""
     """Nonce value passed to the @clerk/clerk-js script tag for CSP implementation."""
@@ -402,20 +411,21 @@ class ClerkProvider(ClerkBase):
     publishable_key: str = ""
     """The Clerk Publishable Key for your instance, found on the API keys page in the Clerk Dashboard."""
 
-    proxy_url: str | Callable[[str], str] = ""
+    # proxy_url: str | JSCallable[[str], str] = ""
+    proxy_url: str = ""
     """The URL of the proxy server to use for Clerk API requests."""
 
-    router_push: Callable[[str], None | Any] | None = None
+    router_push: JSCallable[[str], None | Any] | None = None
     """A function to push a new route into the history stack for navigation."""
 
-    router_replace: Callable[[str], None | Any] | None = None
+    router_replace: JSCallable[[str], None | Any] | None = None
     """A function to replace the current route in the history stack for navigation."""
 
-    sdk_metadata: dict[str, str] = {"name": "", "version": "", "environment": ""}
-    """Contains information about the SDK that the host application is using."""
+    # sdk_metadata: dict[str, str] = {"name": "", "version": "", "environment": ""}
+    # """Contains information about the SDK that the host application is using."""
 
-    select_initial_session: Callable[[Any], None | Any] | None = None
-    """Function to override the default behavior of using the last active session during client initialization."""
+    # select_initial_session: Callable[[Any], None | Any] | None = None
+    # """Function to override the default behavior of using the last active session during client initialization."""
 
     sign_in_fallback_redirect_url: str = "/"
     """The fallback URL to redirect to after the user signs in if there's no redirect_url in the path."""

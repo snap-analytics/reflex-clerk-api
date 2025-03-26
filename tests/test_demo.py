@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 from pathlib import Path
@@ -37,7 +38,7 @@ def page(
     page.set_default_timeout(INTERACTION_TIMEOUT)
     yield page
     if request.session.testsfailed:
-        print("Test failed. Saving screenshot as playwright_test_error.png")
+        logging.error("Test failed. Saving screenshot as playwright_test_error.png")
         page.screenshot(path="playwright_test_error.png")
 
 
@@ -61,10 +62,10 @@ def create_test_user(clerk_client: Clerk) -> User:
             raise SetupError(
                 "Multiple test users found with same email... This should not happen."
             )
-        print("Test user already exists.")
+        logging.error("Test user already exists.")
         return existing[0]
 
-    print("Creating test user...")
+    logging.error("Creating test user...")
     res = clerk_client.users.create(
         request={
             "external_id": "ext-id-" + uuid.uuid4().hex[:5],

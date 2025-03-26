@@ -592,46 +592,56 @@ def user_profile_demo() -> rx.Component:
 
 
 def demo_header() -> rx.Component:
-    return rx.vstack(
-        rx.heading("Demos", size="6"),
-        rx.grid(
-            rx.vstack(
-                rx.text(
-                    "The demos below are using a development Clerk API key, so you can try out everything with fake credentials."
-                ),
-                rx.text(
-                    "To simply log in, you can use the email/password combination."
-                ),
-            ),
-            rx.card(
-                rx.vstack(
-                    rx.data_list.root(
-                        data_list_item(
-                            "username", rx.code("test+clerk_test@gmail.com")
-                        ),
-                        data_list_item("password", rx.code("test-clerk-password")),
-                    ),
-                    rx.hstack(
-                        clerk.signed_in(
-                            clerk.sign_out_button(
-                                rx.button("Sign out", data_testid="sign_out")
-                            )
-                        ),
-                        clerk.signed_out(
-                            rx.hstack(
-                                clerk.sign_in_button(
-                                    rx.button("Sign in", data_testid="sign_in")
-                                ),
-                                clerk.sign_up_button(
-                                    rx.button("Sign up", data_testid="sign_up")
-                                ),
-                            ),
-                        ),
-                    ),
-                ),
-            ),
-            columns=rx.breakpoints(initial="1", sm="2"),
+    demo_intro = rx.vstack(
+        rx.text(
+            "The demos below are using a development Clerk API key, so you can try out everything with fake credentials."
         ),
+        rx.text("To simply log in, you can use the email/password combination."),
+    )
+    clerk_user_info = rx.box(
+        clerk.clerk_loaded(
+            rx.cond(
+                clerk.ClerkState.is_signed_in,
+                rx.card(
+                    rx.hstack(
+                        rx.data_list.root(
+                            data_list_item(
+                                "Clerk user_id", rx.text(clerk.ClerkState.user_id)
+                            ),
+                            data_list_item("User button", clerk.user_button()),
+                        ),
+                    ),
+                ),
+                rx.text("Sign in to see user info."),
+            )
+        ),
+        clerk.clerk_loading(rx.spinner(size="3")),
+    )
+
+    test_user_and_pass = rx.card(
+        rx.vstack(
+            rx.data_list.root(
+                data_list_item("username", rx.code("test+clerk_test@gmail.com")),
+                data_list_item("password", rx.code("test-clerk-password")),
+            ),
+            rx.hstack(
+                clerk.signed_in(
+                    clerk.sign_out_button(rx.button("Sign out", data_testid="sign_out"))
+                ),
+                clerk.signed_out(
+                    rx.hstack(
+                        clerk.sign_in_button(
+                            rx.button("Sign in", data_testid="sign_in")
+                        ),
+                        clerk.sign_up_button(
+                            rx.button("Sign up", data_testid="sign_up")
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    )
+    using_demo_instructions = rx.box(
         rx.text(
             "Or if you want test signing up, you can use any email with ",
             rx.code("+clerk_test"),
@@ -650,6 +660,18 @@ def demo_header() -> rx.Component:
                 "in the Clerk documentation.",
                 href="https://clerk.com/docs/testing/test-emails-and-phones",
             ),
+        ),
+    )
+
+    return rx.vstack(
+        rx.heading("Demos", size="6"),
+        rx.grid(
+            demo_intro,
+            clerk_user_info,
+            test_user_and_pass,
+            using_demo_instructions,
+            columns=rx.breakpoints(initial="1", sm="2"),
+            spacing="4",
         ),
     )
 
@@ -700,6 +722,13 @@ clerk.wrap_app(
     publishable_key=os.environ["CLERK_PUBLISHABLE_KEY"],
     secret_key=os.environ["CLERK_SECRET_KEY"],
     register_user_state=True,
+    # NOTE: Colors customizable via the `Appearance` object. (baseTheme is not yet implemented)
+    # appearance=Appearance(
+    #     variables=Variables(
+    #         color_primary="#111A27",
+    #         color_background="#C2F3FF",
+    #     ),
+    # ),
 )
 
 # NOTE: Use the `clerk.on_load` to ensure that the ClerkState is updated *before* any other on_load events are run.

@@ -3,7 +3,7 @@ import logging
 import os
 import time
 import uuid
-from typing import Any, ClassVar, TypeVar
+from typing import Any, Callable, ClassVar, TypeVar
 
 import authlib.jose.errors as jose_errors
 import clerk_backend_api
@@ -330,6 +330,13 @@ function ClerkSessionSynchronizer({ children }) {
         ]
 
 
+Appearance = dict[str, Any]
+Localization = dict[str, Any]
+InitialState = dict[str, Any]
+# Should this be EventSpec instead?
+JSCallable = Callable
+
+
 class ClerkProvider(ClerkBase):
     """ClerkProvider component."""
 
@@ -350,10 +357,101 @@ class ClerkProvider(ClerkBase):
     # trigger to what will be passed to the backend event handler function.
     # on_change: rx.EventHandler[lambda e: [e]]
 
-    publishable_key: str
-    """
-    The Clerk Publishable Key for your instance. This can be found on the API keys page in the Clerk Dashboard.
-    """
+    after_multi_session_single_sign_out_url: str = ""
+    """The URL to navigate to after a successful sign-out from multiple sessions."""
+
+    after_sign_out_url: str = ""
+    """The full URL or path to navigate to after a successful sign-out."""
+
+    allowed_redirect_origins: list[str | str] = []
+    """An optional list of domains to validate user-provided redirect URLs against."""
+
+    allowed_redirect_protocols: list[str] = []
+    """An optional list of protocols to validate user-provided redirect URLs against."""
+
+    appearance: Appearance | None = None
+    """Optional object to style your components. Will only affect Clerk components."""
+
+    clerk_js_url: str = ""
+    """Define the URL that @clerk/clerk-js should be hot-loaded from."""
+
+    clerk_js_variant: str | None = None
+    """If your web application only uses control components, set this to 'headless'."""
+
+    clerk_js_version: str = ""
+    """Define the npm version for @clerk/clerk-js."""
+
+    domain: str | Callable[[str], bool] = ""
+    """Required if your application is a satellite application. Sets the domain."""
+
+    dynamic: bool = False
+    """(For Next.js only) Indicates whether Clerk should make dynamic auth data available."""
+
+    initial_state: InitialState | None = None
+    """Provide an initial state of the Clerk client during server-side rendering."""
+
+    is_satellite: bool | Callable[[str], bool] = False
+    """Whether the application is a satellite application."""
+
+    localization: Localization | None = None
+    """Optional object to localize your components. Will only affect Clerk components."""
+
+    nonce: str = ""
+    """Nonce value passed to the @clerk/clerk-js script tag for CSP implementation."""
+
+    publishable_key: str = ""
+    """The Clerk Publishable Key for your instance, found on the API keys page in the Clerk Dashboard."""
+
+    proxy_url: str | Callable[[str], str] = ""
+    """The URL of the proxy server to use for Clerk API requests."""
+
+    router_push: Callable[[str], None | Any] | None = None
+    """A function to push a new route into the history stack for navigation."""
+
+    router_replace: Callable[[str], None | Any] | None = None
+    """A function to replace the current route in the history stack for navigation."""
+
+    sdk_metadata: dict[str, str] = {"name": "", "version": "", "environment": ""}
+    """Contains information about the SDK that the host application is using."""
+
+    select_initial_session: Callable[[Any], None | Any] | None = None
+    """Function to override the default behavior of using the last active session during client initialization."""
+
+    sign_in_fallback_redirect_url: str = "/"
+    """The fallback URL to redirect to after the user signs in if there's no redirect_url in the path."""
+
+    sign_up_fallback_redirect_url: str = "/"
+    """The fallback URL to redirect to after the user signs up if there's no redirect_url in the path."""
+
+    sign_in_force_redirect_url: str = ""
+    """URL to always redirect to after the user signs in."""
+
+    sign_up_force_redirect_url: str = ""
+    """URL to always redirect to after the user signs up."""
+
+    sign_in_url: str = ""
+    """URL used for any redirects that might happen, pointing to your primary application on the client-side."""
+
+    sign_up_url: str = ""
+    """URL used for any redirects that might happen, pointing to your primary application on the client-side."""
+
+    standard_browser: bool = True
+    """Indicates whether ClerkJS assumes cookies can be set (browser setup)."""
+
+    support_email: str = ""
+    """Optional support email for display in authentication screens."""
+
+    sync_host: str = ""
+    """URL of the web application that the Chrome Extension will sync the authentication state from."""
+
+    telemetry: bool | dict[str, bool] | None = None
+    """Controls whether Clerk will collect telemetry data."""
+
+    touch_session: bool = True
+    """Indicates whether the Clerk Frontend API touch endpoint is called during page focus to keep the last active session alive."""
+
+    waitlist_url: str = ""
+    """The full URL or path to the waitlist page."""
 
     @classmethod
     def create(cls, *children, **props) -> "ClerkProvider":

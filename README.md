@@ -65,3 +65,8 @@ I use [Taskfile](https://taskfile.dev/) (similar to `makefile`) to make common t
 - `task run-docs` -- Run the docs locally
 - `task test` -- Run tests
 - `task bump-patch/minor/major` -- Bump the version (`patch` for a bug fix, `minor` for an added feature).
+
+
+## TODO:
+
+- How should the `condition` and `fallback` props be defined on `Protect`? They are supposed to be `Javascript` and `JSX` respectively, but are just `str` for now... Is `Javascript` `rx.Script`? And `JSX` `rx.Component`?

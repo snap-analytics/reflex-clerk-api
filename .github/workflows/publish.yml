@@ -49,9 +49,6 @@ jobs:
       - name: Create .env file
         run: echo "PYPI_TOKEN=${{ secrets.PYPI_TOKEN }}" > .env
 
-      - name: Add Tag
-        run: task push-tag
-
       - name: Publish
         run: task publish
 

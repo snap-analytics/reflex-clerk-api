@@ -11,8 +11,11 @@ from reflex.event import EventType
 from rxconfig import config
 
 # Set up debug logging with a console handler
-logging.basicConfig(level=logging.DEBUG, handlers=[logging.StreamHandler()])
-logging.debug("Logging is set up.")
+logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler()])
+# Just a very quick check to see which loggers are actually active in the console
+logging.debug("Logging DEBUG")
+logging.info("Logging INFO")
+logging.warning("Logging WARNING")
 
 
 load_dotenv()

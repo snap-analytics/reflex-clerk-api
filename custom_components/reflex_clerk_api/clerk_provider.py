@@ -458,3 +458,30 @@ def clerk_provider(
         publishable_key=publishable_key,
         **props,
     )
+
+
+def wrap_app(
+    app: rx.App,
+    publishable_key: str,
+    secret_key: str,
+    register_user_state: bool = False,
+) -> rx.App:
+    """Wraps the entire app with the ClerkProvider.
+
+    For multi-page apps where all pages require Clerk authentication components (including knowing if the user
+    is **not** signed in).
+
+    Args:
+        app: The Reflex app to wrap.
+        publishable_key: The Clerk Publishable Key for your instance.
+        secret_key: Your Clerk app's Secret Key.
+        register_user_state: Whether to register the ClerkUser state to automatically load user information on login.
+    """
+    # 1 makes this the first wrapper around the content
+    #  (0 would place it after, 100 would also wrap default reflex wrappers)
+    app.app_wraps[(1, "ClerkProvider")] = lambda _: clerk_provider(
+        publishable_key=publishable_key,
+        secret_key=secret_key,
+        register_user_state=register_user_state,
+    )
+    return app

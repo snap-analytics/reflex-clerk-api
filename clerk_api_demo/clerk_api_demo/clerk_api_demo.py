@@ -657,46 +657,51 @@ def demo_header() -> rx.Component:
 def index() -> rx.Component:
     clerk.register_on_auth_change_handler(State.do_something_on_log_in_or_out)
 
-    return clerk.clerk_provider(
-        rx.box(
-            rx.vstack(
-                rx.flex(
-                    demo_page_header_and_description(),
-                    getting_started(),
-                    spacing="7",
-                    direction=rx.breakpoints(initial="column", sm="row"),
-                ),
-                # rx.button("Dev reset", on_click=clerk.ClerkState.force_reset),
-                rx.divider(),
-                demo_header(),
-                rx.grid(
-                    current_clerk_state_values(),
-                    clerk_loaded_demo(),
-                    on_load_demo(),
-                    on_auth_change_demo(),
-                    user_info_demo(),
-                    links_to_demo_pages(),
-                    user_profile_demo(),
-                    columns=rx.breakpoints(initial="1", sm="2", md="3", xl="4"),
-                    spacing="4",
-                    align="stretch",
-                ),
-                align="center",
+    # Note: Using `clerk.wrap_app(...)` instead of `clerk.clerk_provider(...)` here.
+    return rx.box(
+        rx.vstack(
+            rx.flex(
+                demo_page_header_and_description(),
+                getting_started(),
                 spacing="7",
+                direction=rx.breakpoints(initial="column", sm="row"),
             ),
-            height="100vh",
-            max_width="100%",
-            overflow_y="auto",
-            padding="2em",
+            # rx.button("Dev reset", on_click=clerk.ClerkState.force_reset),
+            rx.divider(),
+            demo_header(),
+            rx.grid(
+                current_clerk_state_values(),
+                clerk_loaded_demo(),
+                on_load_demo(),
+                on_auth_change_demo(),
+                user_info_demo(),
+                links_to_demo_pages(),
+                user_profile_demo(),
+                columns=rx.breakpoints(initial="1", sm="2", md="3", xl="4"),
+                spacing="4",
+                align="stretch",
+            ),
+            align="center",
+            spacing="7",
         ),
-        publishable_key=os.environ["CLERK_PUBLISHABLE_KEY"],
-        register_user_state=True,
-        secret_key=os.environ.get("CLERK_SECRET_KEY"),
+        height="100vh",
+        max_width="100%",
+        overflow_y="auto",
+        padding="2em",
     )
 
 
 # Add state and page to the app.
 app = rx.App()
+
+# This wraps the entire app (all pages) with the ClerkProvider.
+clerk.wrap_app(
+    app,
+    publishable_key=os.environ["CLERK_PUBLISHABLE_KEY"],
+    secret_key=os.environ["CLERK_SECRET_KEY"],
+    register_user_state=True,
+)
+
 # NOTE: Use the `clerk.on_load` to ensure that the ClerkState is updated *before* any other on_load events are run.
 #  The `ClerkState` is updated by an event sent from the frontend that is not guaranteed to run before the reflex on_load events.
 app.add_page(

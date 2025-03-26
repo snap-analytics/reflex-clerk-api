@@ -589,7 +589,7 @@ def clerk_provider(
 def wrap_app(
     app: rx.App,
     publishable_key: str,
-    secret_key: str,
+    secret_key: str | None = None,
     register_user_state: bool = False,
     appearance: Appearance | None = None,
     **props,
@@ -602,7 +602,7 @@ def wrap_app(
     Args:
         app: The Reflex app to wrap.
         publishable_key: The Clerk Publishable Key for your instance.
-        secret_key: Your Clerk app's Secret Key.
+        secret_key: Your Clerk app's Secret Key. (not needed for frontend only)
         register_user_state: Whether to register the ClerkUser state to automatically load user information on login.
     """
     # 1 makes this the first wrapper around the content

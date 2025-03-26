@@ -6,4 +6,4 @@ dist/
 site/
 .states/
 playwright_test_error.png
-.prettierignore
+.idea

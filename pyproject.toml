@@ -15,7 +15,7 @@ keywords = ["reflex","reflex-custom-components", "clerk", "clerk-backend-api"]
 dependencies = [
     "authlib>=1.5.1",
     "clerk-backend-api>=1.8.0",
-    "reflex>=0.7.0",
+    "reflex>=0.7.2",
 ]
 
 classifiers = [

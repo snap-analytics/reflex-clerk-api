@@ -1607,7 +1607,7 @@ requires-dist = [
     { name = "authlib", specifier = ">=1.5.1" },
     { name = "build", marker = "extra == 'dev'" },
     { name = "clerk-backend-api", specifier = ">=1.8.0" },
-    { name = "reflex", specifier = ">=0.7.0" },
+    { name = "reflex", specifier = ">=0.7.2" },
     { name = "twine", marker = "extra == 'dev'" },
 ]
 provides-extras = ["dev"]

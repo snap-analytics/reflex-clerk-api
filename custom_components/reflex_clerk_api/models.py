@@ -1,11 +1,11 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from reflex.components.props import PropsBase
 
 LiteralBaseTheme = Literal["default", "dark", "neobrutalism", "shadesOfPurple"]
 
 
-class Layout(BaseModel):
+class Layout(PropsBase):
     animations: bool = True
     """Whether to enable animations inside the components. Defaults to true."""
 
@@ -43,7 +43,7 @@ class Layout(BaseModel):
     """Whether development warnings show up in development mode."""
 
 
-class Variables(BaseModel):
+class Variables(PropsBase):
     color_primary: str = ""
     color_danger: str = ""
     color_success: str = ""
@@ -59,19 +59,17 @@ class Variables(BaseModel):
     font_family: str = "inherit"
     font_family_buttons: str = "inherit"
     font_size: str = "0.8125rem"
-    font_weight: dict[str, int] = Field(
-        default_factory=lambda: {
-            "normal": 400,
-            "medium": 500,
-            "semibold": 600,
-            "bold": 700,
-        }
-    )
+    font_weight: dict[str, int] = {
+        "normal": 400,
+        "medium": 500,
+        "semibold": 600,
+        "bold": 700,
+    }
     border_radius: str = "0.375rem"
     spacing_unit: str = "1rem"
 
 
-class Captcha(BaseModel):
+class Captcha(PropsBase):
     theme: str = "auto"
     """The CAPTCHA widget theme. Defaults to auto."""
 
@@ -82,9 +80,10 @@ class Captcha(BaseModel):
     """The CAPTCHA widget language/locale."""
 
 
-class Appearance(BaseModel):
-    base_theme: LiteralBaseTheme = "default"
-    """A theme used as the base theme for the components."""
+class Appearance(PropsBase):
+    # TODO: This needs to reference the actual theme object, not a string -- don't know how to do that yet.
+    # base_theme: LiteralBaseTheme = "default"
+    # """A theme used as the base theme for the components."""
 
     layout: Layout | None = None
     """Configuration options that affect the layout of the components."""

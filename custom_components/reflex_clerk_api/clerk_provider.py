@@ -11,7 +11,6 @@ import reflex as rx
 from authlib.jose import JWTClaims, jwt
 from reflex.event import EventCallback, EventType, IndividualEventType
 from reflex.utils.exceptions import ImmutableStateError
-from reflex.utils.imports import ImportTypes
 
 from reflex_clerk_api.base import ClerkBase
 
@@ -294,7 +293,7 @@ class ClerkSessionSynchronizer(rx.Component):
     def add_imports(
         self,
     ) -> rx.ImportDict:
-        addl_imports: dict[str, ImportTypes] = {
+        addl_imports: rx.ImportDict = {
             "@clerk/clerk-react": ["useAuth"],
             "react": ["useContext", "useEffect"],
             "/utils/context": ["EventLoopContext"],
@@ -343,10 +342,12 @@ class ClerkProvider(ClerkBase):
     # The React component tag.
     tag = "ClerkProvider"
 
-    def add_imports(self) -> rx.ImportDict:
-        return {
-            "@clerk/themes": ["dark", "neobrutalism", "shadesOfPurple"],
-        }
+    # NOTE: This might be relevant to getting apperance.base_theme to work.
+    # lib_dependencies: list[str] = ["@clerk/themes"]
+    # def add_imports(self) -> rx.ImportDict:
+    #     return {
+    #         "@clerk/themes": ["dark", "neobrutalism", "shadesOfPurple"],
+    #     }
 
     # The props of the React component.
     # Note: when Reflex compiles the component to Javascript,
@@ -374,6 +375,7 @@ class ClerkProvider(ClerkBase):
     allowed_redirect_protocols: list[str] = []
     """An optional list of protocols to validate user-provided redirect URLs against."""
 
+    # NOTE: `apperance.base_theme` does not work yet.
     appearance: Appearance | None = None
     """Optional object to style your components. Will only affect Clerk components."""
 
@@ -472,6 +474,14 @@ class ClerkProvider(ClerkBase):
 
 
 def on_load(on_load_events: EventType[()] | None) -> list[IndividualEventType[()]]:
+    """Use this to wrap any on_load events that should happen after Clerk has checked authentication.
+
+    Args:
+        on_load_events: The events to run after authentication is checked.
+
+    Examples:
+        app.add_page(..., on_load=clerk.on_load(<events>))
+    """
     if on_load_events is None:
         return []
     on_load_list = (
@@ -547,13 +557,20 @@ def clerk_provider(
     publishable_key: str,
     secret_key: str | None = None,
     register_user_state: bool = False,
+    appearance: Appearance | None = None,
     **props,
 ) -> rx.Component:
     """
     Create a ClerkProvider component to wrap your app/page that uses clerk authentication.
 
+    Note: can also use `wrap_app` to wrap the entire app.
+
     Args:
+        children: The children components to wrap.
+        publishable_key: The Clerk Publishable Key for your instance.
         secret_key: Your Clerk app's Secret Key, which you can find in the Clerk Dashboard. It will be prefixed with sk_test_ in development instances and sk_live_ in production instances. Do not expose this on the frontend with a public environment variable.
+        register_user_state: Whether to register the ClerkUser state to automatically load user information on login.
+        appearance: Optional object to style your components. Will only affect Clerk components.
     """
     if secret_key:
         ClerkState._set_secret_key(secret_key)
@@ -564,6 +581,7 @@ def clerk_provider(
     return ClerkProvider.create(
         ClerkSessionSynchronizer.create(*children),
         publishable_key=publishable_key,
+        appearance=appearance,
         **props,
     )
 
@@ -573,6 +591,8 @@ def wrap_app(
     publishable_key: str,
     secret_key: str,
     register_user_state: bool = False,
+    appearance: Appearance | None = None,
+    **props,
 ) -> rx.App:
     """Wraps the entire app with the ClerkProvider.
 
@@ -591,5 +611,7 @@ def wrap_app(
         publishable_key=publishable_key,
         secret_key=secret_key,
         register_user_state=register_user_state,
+        appearance=appearance,
+        **props,
     )
     return app

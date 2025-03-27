@@ -18,10 +18,6 @@ tasks:
       # Use non-default port to not clash with reflex backend
       - uv run mkdocs serve -a localhost:9000
 
-  publish-docs:
-    cmds:
-      - uv run mkdocs gh-deploy --force
-
   test:
     deps:
       - task: lint
@@ -56,7 +52,7 @@ tasks:
       - uv run scripts/bump-version.py major pyproject.toml README.md
       - uv lock
 
-  push-tag:
+  publish:
     preconditions:
       - sh: git status
     cmds:
@@ -74,7 +70,7 @@ tasks:
     cmds:
       - uv run pre-commit autoupdate
 
-  publish:
+  manual-publish:
     preconditions:
       # Check environment variable
       - sh: test -n "$PYPI_TOKEN"
@@ -82,6 +78,10 @@ tasks:
     cmds:
       - echo "Publishing to PyPI"
       - uv run reflex component publish --no-validate-project-info --no-share --token $PYPI_TOKEN
+
+  manual-publish-docs:
+    cmds:
+      - uv run mkdocs gh-deploy --force
 
   share:
     desc: Share the component via the reflex library

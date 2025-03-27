@@ -50,7 +50,7 @@ jobs:
         run: echo "PYPI_TOKEN=${{ secrets.PYPI_TOKEN }}" > .env
 
       - name: Publish
-        run: task publish
+        run: task manual-publish
 
       - name: Publish docs
-        run: task publish-docs
+        run: task manual-publish-docs

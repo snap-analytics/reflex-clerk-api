@@ -75,7 +75,11 @@ class State(rx.State):
 
 def demo_page_header_and_description() -> rx.Component:
     return rx.vstack(
-        rx.heading("reflex-clerk-api demo", size="9"),
+        rx.hstack(
+            rx.heading("reflex-clerk-api demo", size="9"),
+            rx.text(clerk.__version__),
+            align="baseline",
+        ),
         rx.heading(
             "Custom",
             rx.link(rx.code("reflex"), href="https://reflex.dev"),

@@ -210,7 +210,7 @@ class ClerkState(rx.State):
         """
         if self._jwk_keys:
             return self._jwk_keys
-        jwks = await self.client.jwks.get_async()
+        jwks = await self.client.jwks.get_jwks_async()
         assert jwks is not None
         assert jwks.keys is not None
         keys = jwks.model_dump()["keys"]

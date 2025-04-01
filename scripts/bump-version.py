@@ -1,19 +1,19 @@
+import re
 import sys
 from pathlib import Path
 from typing import Literal
 
 import semver
-import tomlkit
 
 LITERAL_PART = Literal["major", "minor", "patch"]
 
 
-def get_version_from_pyproject_toml(file_path: Path) -> str:
-    with file_path.open("r") as file:
-        data = tomlkit.parse(file.read())
-    version = data["project"]["version"]  # pyright: ignore[reportIndexIssue]
-    assert isinstance(version, str)
-    return version
+def get_version_from_init(init_path: Path) -> str:
+    with init_path.open("r") as file:
+        data = file.readline()
+    match = re.search(r'^__version__ = "(.*)"', data)
+    assert match is not None
+    return match.group(1)
 
 
 def bump_version(version: str, part: LITERAL_PART) -> str:
@@ -26,12 +26,15 @@ def bump_version(version: str, part: LITERAL_PART) -> str:
             return semver.bump_patch(version)
 
 
-def update_toml_project_version(file_path: Path, new_version: str) -> None:
-    with file_path.open("r") as file:
-        data = tomlkit.parse(file.read())
-    data["project"]["version"] = new_version  # pyright: ignore[reportIndexIssue]
-    with file_path.open("w") as file:
-        file.write(tomlkit.dumps(data))
+def update_init_version(init_path: Path, new_version: str) -> None:
+    with init_path.open("r") as file:
+        lines = file.readlines()
+
+    # Update the first line with the new version
+    lines[0] = f'__version__ = "{new_version}"\n'
+
+    with init_path.open("w") as file:
+        file.writelines(lines)
 
 
 def update_readme_badge(readme_path: Path, new_version: str) -> None:
@@ -48,10 +51,10 @@ def update_readme_badge(readme_path: Path, new_version: str) -> None:
         file.writelines(lines)
 
 
-def main(part: LITERAL_PART, pyproject_path: Path, readme_path: Path) -> None:
-    current_version = get_version_from_pyproject_toml(pyproject_path)
+def main(part: LITERAL_PART, init_path: Path, readme_path: Path) -> None:
+    current_version = get_version_from_init(init_path)
     new_version = bump_version(current_version, part)
-    update_toml_project_version(pyproject_path, new_version)
+    update_init_version(init_path, new_version)
     update_readme_badge(readme_path, new_version)
     print(f"Successfully bumped from {current_version} to {new_version}")  # noqa: T201
 
@@ -59,12 +62,12 @@ def main(part: LITERAL_PART, pyproject_path: Path, readme_path: Path) -> None:
 if __name__ == "__main__":
     if len(sys.argv) != 4:
         raise ValueError(
-            "Usage: bump-version.py <major|minor|patch> <pyproject.toml-path> <readme-path>"
+            "Usage: bump-version.py <major|minor|patch> <package.__init__.py-path> <readme-path>"
         )
     part = sys.argv[1]
     assert part in ("major", "minor", "patch")
-    pyproject_path = Path(sys.argv[2])
-    assert pyproject_path.exists()
+    init_path = Path(sys.argv[2])
+    assert init_path.exists()
     readme_path = Path(sys.argv[3])
     assert readme_path.exists()
-    main(part, pyproject_path, readme_path)
+    main(part, init_path, readme_path)

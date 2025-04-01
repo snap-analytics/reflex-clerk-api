@@ -4,17 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reflex-clerk-api"
-version = "0.3.0"
 description = "Reflex custom component wrapping @clerk/clerk-react and integrating the clerk-backend-api"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.10"
 authors = [{ name = "Tim Child", email = "timjchild@gmail.com" }]
 keywords = ["reflex","reflex-custom-components", "clerk", "clerk-backend-api"]
+dynamic = ["version"]
 
 dependencies = [
     "authlib>=1.5.1,<2.0.0",
-    "clerk-backend-api>=1.8.0,<2.0.0",
+    "clerk-backend-api>=2.0.0,<3.0.0",
     "reflex>=0.7.2,<0.8.0",
 ]
 
@@ -40,6 +40,9 @@ dev = ["build", "twine"]
 
 [tool.setuptools.packages.find]
 where = ["custom_components"]
+
+[tool.setuptools.dynamic]
+version = {attr = "reflex_clerk_api.__version__"}
 
 [tool.pytest.ini_options]
 # addopts = "--headed"

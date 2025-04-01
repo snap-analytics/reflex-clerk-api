@@ -1,3 +1,5 @@
+__version__ = "0.3.1"
+
 from .authentication_components import sign_in, sign_up
 from .clerk_provider import (
     ClerkState,

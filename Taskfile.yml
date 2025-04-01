@@ -2,6 +2,9 @@ version: "3"
 
 dotenv: [".env"]
 
+vars:
+  INIT_PATH: "custom_components/reflex_clerk_api/__init__.py"
+
 tasks:
   install:
     cmds:
@@ -38,19 +41,19 @@ tasks:
   bump-patch:
     dir: "{{.TASKFILE_DIR}}"
     cmds:
-      - uv run scripts/bump-version.py patch pyproject.toml README.md
+      - uv run scripts/bump-version.py patch {{.INIT_PATH}} README.md
       - uv lock
 
   bump-minor:
     dir: "{{.TASKFILE_DIR}}"
     cmds:
-      - uv run scripts/bump-version.py minor pyproject.toml README.md
+      - uv run scripts/bump-version.py minor {{.INIT_PATH}} README.md
       - uv lock
 
   bump-major:
     dir: "{{.TASKFILE_DIR}}"
     cmds:
-      - uv run scripts/bump-version.py major pyproject.toml README.md
+      - uv run scripts/bump-version.py major {{.INIT_PATH}} README.md
       - uv lock
 
   publish:

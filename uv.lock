@@ -1591,7 +1591,6 @@ wheels = [
 
 [[package]]
 name = "reflex-clerk-api"
-version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "authlib" },

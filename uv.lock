@@ -1387,6 +1387,19 @@ wheels = [
 ]
 
 [[package]]
+name = "pytest-pretty"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+    { name = "rich" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a5/18/30ad0408295f3157f7a4913f0eaa51a0a377ebad0ffa51ff239e833c6c72/pytest_pretty-1.2.0.tar.gz", hash = "sha256:105a355f128e392860ad2c478ae173ff96d2f03044692f9818ff3d49205d3a60", size = 6542 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bf/fe/d44d391312c1b8abee2af58ee70fabb1c00b6577ac4e0bdf25b70c1caffb/pytest_pretty-1.2.0-py3-none-any.whl", hash = "sha256:6f79122bf53864ae2951b6c9e94d7a06a87ef753476acd4588aeac018f062036", size = 6180 },
+]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 source = { registry = "https://pypi.org/simple" }
@@ -1611,6 +1624,7 @@ dev = [
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-playwright" },
+    { name = "pytest-pretty" },
     { name = "ruff" },
     { name = "semver" },
 ]
@@ -1635,6 +1649,7 @@ dev = [
     { name = "pyright", specifier = ">=1.1.396" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pytest-playwright", specifier = ">=0.7.0" },
+    { name = "pytest-pretty", specifier = ">=1.2.0" },
     { name = "ruff", specifier = ">=0.9.10" },
     { name = "semver", specifier = ">=3.0.4" },
 ]

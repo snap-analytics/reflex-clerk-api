@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reflex-clerk-api"
-version = "0.2.7"
+version = "0.2.8"
 description = "Reflex custom component wrapping @clerk/clerk-react and integrating the clerk-backend-api"
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -13,9 +13,9 @@ authors = [{ name = "Tim Child", email = "timjchild@gmail.com" }]
 keywords = ["reflex","reflex-custom-components", "clerk", "clerk-backend-api"]
 
 dependencies = [
-    "authlib>=1.5.1",
-    "clerk-backend-api>=1.8.0",
-    "reflex>=0.7.2",
+    "authlib>=1.5.1,<2.0.0",
+    "clerk-backend-api>=1.8.0,<2.0.0",
+    "reflex>=0.7.2,<0.8.0",
 ]
 
 classifiers = [

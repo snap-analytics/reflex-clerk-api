@@ -17,7 +17,7 @@ TEST_EMAIL = "ci-test+clerk_test@gmail.com"
 TEST_PASSWORD = "test-clerk-password"
 
 PAGE_LOAD_TIMEOUT = 10000 if not os.getenv("CI") else 30000
-INTERACTION_TIMEOUT = 2000 if not os.getenv("CI") else 10000
+INTERACTION_TIMEOUT = 2000 if not os.getenv("CI") else 20000
 
 
 @pytest.fixture(scope="session")

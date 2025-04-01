@@ -36,11 +36,11 @@ class RedirectToSignIn(ClerkBase):
 
     tag = "RedirectToSignIn"
 
-    signInFallbackRedirectUrl: str | None = None
+    sign_in_fallback_redirect_url: str | None = None
     "The fallback URL to redirect to after the user signs in, if there's no redirect_url in the path already. Defaults to /."
-    signInForceRedirectUrl: str | None = None
+    sign_in_force_redirect_url: str | None = None
     "If provided, this URL will always be redirected to after the user signs in."
-    initialValues: SignInInitialValues | None = None
+    initial_values: SignInInitialValues | None = None
     "The values used to prefill the sign-in fields with."
 
 
@@ -49,11 +49,11 @@ class RedirectToSignUp(ClerkBase):
 
     tag = "RedirectToSignUp"
 
-    signUpFallbackRedirectUrl: str | None = None
+    sign_up_fallback_redirect_url: str | None = None
     "The fallback URL to redirect to after the user signs up, if there's no redirect_url in the path already. Defaults to /."
-    signUpForceRedirectUrl: str | None = None
+    sign_up_force_redirect_url: str | None = None
     "If provided, this URL will always be redirected to after the user signs up."
-    initialValues: SignUpInitialValues | None = None
+    initial_values: SignUpInitialValues | None = None
     "The values used to prefill the sign-up fields with."
 
 

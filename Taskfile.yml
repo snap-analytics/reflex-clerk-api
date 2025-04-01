@@ -63,7 +63,7 @@ tasks:
       - git diff --quiet --staged || (echo "There are staged changes. They must be committed first" && exit 1)
       - git diff --quiet || (echo "There are unstaged changes. They must be committed first." && exit 1)
 
-      - uv run scripts/get-version.py pyproject.toml | xargs -I {} git tag -a v{} -m "Release v{}"
+      - uv run scripts/get-version.py {{.INIT_PATH}} | xargs -I {} git tag -a v{} -m "Release v{}"
       - git push --follow-tags
 
   pre-commit-all:

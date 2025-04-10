@@ -50,6 +50,14 @@ def clerk_client() -> Iterator[Clerk]:
         yield client
 
 
+def test_clerk_client(clerk_client: Clerk):
+    """Really basic test that the clerk client is working."""
+    # NOTE: Getting a deprecation warning here, but not sure why...
+    #  Warning message is not helpful.
+    existing = clerk_client.users.list(request={"email_address": [TEST_EMAIL]})
+    assert existing is not None
+
+
 @pytest.fixture
 def create_test_user(clerk_client: Clerk) -> User:
     """Creates (or checks already exists) a test clerk user.

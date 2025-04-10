@@ -2,9 +2,6 @@ version: "3"
 
 dotenv: [".env"]
 
-vars:
-  INIT_PATH: "custom_components/reflex_clerk_api/__init__.py"
-
 tasks:
   install:
     cmds:
@@ -39,21 +36,18 @@ tasks:
       - uv run pyright
 
   bump-patch:
-    dir: "{{.TASKFILE_DIR}}"
     cmds:
-      - uv run scripts/bump-version.py patch {{.INIT_PATH}} README.md
+      - uv run hatch version patch
       - uv lock
 
   bump-minor:
-    dir: "{{.TASKFILE_DIR}}"
     cmds:
-      - uv run scripts/bump-version.py minor {{.INIT_PATH}} README.md
+      - uv run hatch version minor
       - uv lock
 
   bump-major:
-    dir: "{{.TASKFILE_DIR}}"
     cmds:
-      - uv run scripts/bump-version.py major {{.INIT_PATH}} README.md
+      - uv run hatch version major
       - uv lock
 
   publish:
@@ -63,7 +57,7 @@ tasks:
       - git diff --quiet --staged || (echo "There are staged changes. They must be committed first" && exit 1)
       - git diff --quiet || (echo "There are unstaged changes. They must be committed first." && exit 1)
 
-      - uv run scripts/get-version.py {{.INIT_PATH}} | xargs -I {} git tag -a v{} -m "Release v{}"
+      - uv run hatch version | xargs -I {} git tag -a v{} -m "Release v{}"
       - git push --follow-tags
 
   pre-commit-all:
@@ -81,6 +75,7 @@ tasks:
         msg: "PYPI_TOKEN is not set -- Add PYPI_TOKEN=... to .env file"
     cmds:
       - echo "Publishing to PyPI"
+      - uv run reflex build
       - uv publish --token $PYPI_TOKEN
 
   manual-publish-docs:

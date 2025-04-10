@@ -2,6 +2,9 @@
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.hatch.version]
+path = "custom_components/reflex_github_button/__init__.py"
+
 [project]
 name = "reflex-clerk-api"
 description = "Reflex custom component wrapping @clerk/clerk-react and integrating the clerk-backend-api"

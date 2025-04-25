@@ -27,7 +27,7 @@ dynamic = ["version"]
 dependencies = [
     "authlib>=1.5.1,<2.0.0",
     "clerk-backend-api>=2.0.0,<3.0.0",
-    "reflex>=0.7.2,<0.8.0",
+    "reflex==0.7.5",  # https://github.com/reflex-dev/reflex/issues/5114 -- Pinned until this is fixed
 ]
 
 classifiers = [

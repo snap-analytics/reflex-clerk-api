@@ -1631,6 +1631,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-playwright" },
     { name = "pytest-pretty" },
+    { name = "reflex" },
     { name = "ruff" },
     { name = "semver" },
 ]
@@ -1640,7 +1641,7 @@ requires-dist = [
     { name = "authlib", specifier = ">=1.5.1,<2.0.0" },
     { name = "build", marker = "extra == 'dev'" },
     { name = "clerk-backend-api", specifier = ">=2.0.0,<3.0.0" },
-    { name = "reflex", specifier = "==0.7.5" },
+    { name = "reflex", specifier = ">=0.7.5" },
     { name = "twine", marker = "extra == 'dev'" },
 ]
 provides-extras = ["dev"]
@@ -1656,6 +1657,7 @@ dev = [
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pytest-playwright", specifier = ">=0.7.0" },
     { name = "pytest-pretty", specifier = ">=1.2.0" },
+    { name = "reflex", specifier = "==0.7.5" },
     { name = "ruff", specifier = ">=0.9.10" },
     { name = "semver", specifier = ">=3.0.4" },
 ]

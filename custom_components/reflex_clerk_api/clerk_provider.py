@@ -50,6 +50,7 @@ class ClerkState(rx.State):
     _dependent_handlers: ClassVar[dict[int, EventCallback]] = {}
     _client: ClassVar[clerk_backend_api.Clerk | None] = None
     _jwk_keys: ClassVar[dict[str, Any] | None] = None
+    "JWK keys from Clerk for decoding any users JWT tokens (only required once per instance)."
     _last_jwk_reset: ClassVar[float] = 0.0
     _claims_options: ClassVar[dict[str, Any]] = {
         # "iss": {"value": "https://<your-iss>.clerk.accounts.dev"},
@@ -90,11 +91,13 @@ class ClerkState(rx.State):
         assert self._client is not None
         return self._client
 
-    @rx.event
+    @rx.event(background=True)
     async def set_clerk_session(self, token: str) -> EventType:
         """Manually obtain user session information via the Clerk JWT.
 
         This event is triggered by the frontend via the ClerkSessionSynchronizer/ClerkProvider component.
+
+        Note: Only the parts that modify the per-instance state need to be in an `async with self` block.
         """
         logging.debug("Setting Clerk session")
         jwks = await self._get_jwk_keys()
@@ -105,7 +108,8 @@ class ClerkState(rx.State):
         except jose_errors.DecodeError as e:
             # E.g. DecodeError -- Something went wrong just getting the JWT
             # On next attempt, new JWKs will be fetched
-            self.auth_error = e
+            async with self:
+                self.auth_error = e
             self._request_jwk_reset()
             logging.warning(f"JWT decode error: {e}")
             return ClerkState.clear_clerk_session
@@ -116,10 +120,11 @@ class ClerkState(rx.State):
             logging.warning(f"JWT token is invalid: {e}")
             return ClerkState.clear_clerk_session
 
-        self.is_signed_in = True
-        self.claims = decoded
-        self.user_id = str(decoded.get("sub"))
-        self.auth_checked = True
+        async with self:
+            self.is_signed_in = True
+            self.claims = decoded
+            self.user_id = str(decoded.get("sub"))
+            self.auth_checked = True
         return list(self._dependent_handlers.values())
 
     @rx.event

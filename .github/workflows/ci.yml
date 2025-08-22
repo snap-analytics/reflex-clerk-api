@@ -5,7 +5,9 @@ on:
     tags:
       - "v*.*.*"
     # branches: [main]
-  pull_request:
+  pull_request_target:
+    # Note: Repo must be set to require approval before running workflows from forks
+    # To make this safe
     branches: [main]
 
 concurrency:

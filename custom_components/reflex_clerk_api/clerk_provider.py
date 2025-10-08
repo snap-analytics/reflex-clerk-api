@@ -302,7 +302,7 @@ class ClerkSessionSynchronizer(rx.Component):
             "@clerk/clerk-react": ["useAuth"],
             "react": ["useContext", "useEffect"],
             "$/utils/context": ["EventLoopContext"],
-            "$/utils/state": ["Event"],
+            "$/utils/state": ["ReflexEvent"],
         }
         return addl_imports
 
@@ -319,10 +319,10 @@ function ClerkSessionSynchronizer({ children }) {
       if (isLoaded && !!addEvents) {
         if (isSignedIn) {
           getToken().then(token => {
-            addEvents([Event("%s.set_clerk_session", {token})])
+            addEvents([ReflexEvent("%s.set_clerk_session", {token})])
           })
         } else {
-          addEvents([Event("%s.clear_clerk_session")])
+          addEvents([ReflexEvent("%s.clear_clerk_session")])
         }
       }
   }, [isSignedIn])

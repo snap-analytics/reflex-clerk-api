@@ -25,6 +25,12 @@ from .unstyled_components import (
     sign_up_button,
 )
 from .user_components import user_button, user_profile
+from .organization_components import (
+    create_organization,
+    organization_profile,
+    organization_switcher,
+    organization_list,
+)
 
 __all__ = [
     "ClerkState",
@@ -35,7 +41,11 @@ __all__ = [
     "clerk_loaded",
     "clerk_loading",
     "clerk_provider",
+    "create_organization",
     "on_load",
+    "organization_list",
+    "organization_profile",
+    "organization_switcher",
     "protect",
     "redirect_to_user_profile",
     "register_on_auth_change_handler",

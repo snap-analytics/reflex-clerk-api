@@ -18,9 +18,12 @@ path = "custom_components/reflex_clerk_api/__init__.py"
 name = "reflex-clerk-api"
 description = "Reflex custom component wrapping @clerk/clerk-react and integrating the clerk-backend-api"
 readme = "README.md"
-license = "Apache-2.0"
+license = { text = "Apache-2.0" }
 requires-python = ">=3.10"
-authors = [{ name = "Tim Child", email = "timjchild@gmail.com" }]
+authors = [
+    { name = "Tim Child", email = "timjchild@gmail.com" },
+    { name = "Paul Johnson", email = "paul.johnson@snaplabs.ai" }
+]
 keywords = ["reflex","reflex-custom-components", "clerk", "clerk-backend-api"]
 dynamic = ["version"]
 

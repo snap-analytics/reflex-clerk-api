@@ -73,7 +73,9 @@ class OrganizationSwitcher(ClerkBase):
         after_create_organization_url: The full URL or path to navigate to after creating an organization.
         after_select_organization_url: The full URL or path to navigate to after selecting an organization.
         default_open: Controls whether the OrganizationSwitcher should open by default during the first render.
-        hide_personal_account: Controls whether the personal account option is hidden in the switcher.
+        hide_personal: Controls whether the personal account option is hidden in the switcher.
+        hide_slug: Controls whether the optional slug field in the Organization creation screen is hidden.
+        organization_profile_props: Specify options for the underlying OrganizationProfile component.
         fallback: An optional element to be rendered while the component is mounting.
     """
 
@@ -89,7 +91,9 @@ class OrganizationSwitcher(ClerkBase):
     after_create_organization_url: Optional[str] = None
     after_select_organization_url: Optional[str] = None
     default_open: Optional[str] = None
-    hide_personal_account: Optional[str] = None
+    hide_personal: Optional[str] = None
+    hide_slug: Optional[str] = None
+    organization_profile_props: Optional[str] = None
     fallback: Optional[str] = None
 
 
@@ -107,7 +111,8 @@ class OrganizationList(ClerkBase):
         after_select_personal_url: The full URL or path to navigate to after selecting the personal account.
         create_organization_mode: Controls whether selecting create organization opens as a modal or navigates to a page.
         create_organization_url: The full URL or path leading to the create organization interface.
-        hide_personal_account: Controls whether the personal account option is hidden in the list.
+        hide_personal: Controls whether the personal account option is hidden in the list.
+        hide_slug: Controls whether the optional slug field in the Organization creation screen is hidden.
         skip_invitation_screen: Controls whether to skip the invitation screen when creating an organization.
         fallback: An optional element to be rendered while the component is mounting.
     """
@@ -121,7 +126,8 @@ class OrganizationList(ClerkBase):
     after_select_personal_url: Optional[str] = None
     create_organization_mode: Optional[str] = None
     create_organization_url: Optional[str] = None
-    hide_personal_account: Optional[str] = None
+    hide_personal: Optional[str] = None
+    hide_slug: Optional[str] = None
     skip_invitation_screen: Optional[str] = None
     fallback: Optional[str] = None
 

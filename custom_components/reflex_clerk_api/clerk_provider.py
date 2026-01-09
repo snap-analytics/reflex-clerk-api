@@ -58,6 +58,8 @@ class ClerkState(rx.State):
         "nbf": {"essential": True},
         # "azp": {"essential": False, "values": ["http://localhost:3000", "https://example.com"]},
     }
+    _jwt_validate_leeway_seconds: ClassVar[int] = 60
+    """Clock-skew leeway (seconds) for validating JWT claims like exp/nbf."""
 
     @classmethod
     def register_dependent_handler(cls, handler: EventCallback) -> None:
@@ -83,6 +85,15 @@ class ClerkState(rx.State):
     def set_claims_options(cls, claims_options: dict[str, Any]) -> None:
         """Set the claims options for the JWT claims validation."""
         cls._claims_options = claims_options
+
+    @classmethod
+    def set_jwt_validate_leeway_seconds(cls, seconds: int) -> None:
+        """Set clock-skew leeway (seconds) for JWT exp/nbf validation.
+
+        Default is 60 seconds. Increase if you see intermittent ExpiredTokenError
+        due to clock drift between Clerk servers and your backend.
+        """
+        cls._jwt_validate_leeway_seconds = seconds
 
     @property
     def client(self) -> clerk_backend_api.Clerk:
@@ -115,9 +126,13 @@ class ClerkState(rx.State):
             return ClerkState.clear_clerk_session
         try:
             # Validate the token according to the claim options (e.g. iss, exp, nbf, azp.)
-            decoded.validate()
-        except (jose_errors.InvalidClaimError, jose_errors.MissingClaimError) as e:
-            logging.warning(f"JWT token is invalid: {e}")
+            decoded.validate(leeway=self._jwt_validate_leeway_seconds)
+        except (
+            jose_errors.ExpiredTokenError,
+            jose_errors.InvalidClaimError,
+            jose_errors.MissingClaimError,
+        ) as e:
+            logging.warning(f"JWT token validation failed: {type(e).__name__}: {e}")
             return ClerkState.clear_clerk_session
 
         async with self:
@@ -300,7 +315,7 @@ class ClerkSessionSynchronizer(rx.Component):
     ) -> rx.ImportDict:
         addl_imports: rx.ImportDict = {
             "@clerk/clerk-react": ["useAuth"],
-            "react": ["useContext", "useEffect"],
+            "react": ["useContext", "useEffect", "useRef"],
             "$/utils/context": ["EventLoopContext"],
             "$/utils/state": ["ReflexEvent"],
         }
@@ -313,26 +328,50 @@ class ClerkSessionSynchronizer(rx.Component):
             """
 function ClerkSessionSynchronizer({ children }) {
   const { getToken, isLoaded, isSignedIn } = useAuth()
-  const [ addEvents, connectErrors ] = useContext(EventLoopContext)
+  const [ addEvents ] = useContext(EventLoopContext)
+  const lastSentRef = useRef({ stateKey: null, addEvents: null })
 
   useEffect(() => {
-      if (isLoaded && !!addEvents) {
-        if (isSignedIn) {
-          getToken().then(token => {
-            addEvents([ReflexEvent("%s.set_clerk_session", {token})])
+      // Wait for all dependencies to be ready.
+      if (!isLoaded || !addEvents) return
+
+      // Deduplicate rapid calls, but remain reconnect-safe:
+      // addEvents identity changes across websocket reconnects, so include it in the key.
+      const stateKey = isSignedIn ? "signed_in" : "signed_out"
+      if (
+        lastSentRef.current?.stateKey === stateKey &&
+        lastSentRef.current?.addEvents === addEvents
+      ) return
+      lastSentRef.current = { stateKey, addEvents }
+
+      if (isSignedIn) {
+        // Prefer a fresh token; cached tokens can be close to expiry.
+        // If this Clerk version doesn't support skipCache, fall back to the default call.
+        Promise.resolve()
+          .then(() => getToken({ skipCache: true }))
+          .catch(() => getToken())
+          .then(token => {
+            if (token) {
+              addEvents([ReflexEvent("%s.set_clerk_session", {token})])
+            } else {
+              // Token unavailable despite isSignedIn - clear to avoid stuck auth state.
+              addEvents([ReflexEvent("%s.clear_clerk_session")])
+            }
+          }).catch(() => {
+            // Token retrieval failed - clear to avoid stuck auth state.
+            addEvents([ReflexEvent("%s.clear_clerk_session")])
           })
-        } else {
-          addEvents([ReflexEvent("%s.clear_clerk_session")])
-        }
+      } else {
+        addEvents([ReflexEvent("%s.clear_clerk_session")])
       }
-  }, [isSignedIn])
+  }, [isLoaded, isSignedIn, addEvents, getToken])
 
   return (
       <>{children}</>
   )
 }
 """
-            % (clerk_state_name, clerk_state_name)
+            % (clerk_state_name, clerk_state_name, clerk_state_name, clerk_state_name)
         ]
 
 

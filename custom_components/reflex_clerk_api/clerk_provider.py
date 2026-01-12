@@ -99,7 +99,7 @@ class ClerkState(rx.State):
         Raises:
             ValueError: If seconds is negative or exceeds 3600.
         """
-        if not isinstance(seconds, int) or seconds < 0:
+        if not isinstance(seconds, int) or isinstance(seconds, bool) or seconds < 0:
             raise ValueError(
                 f"jwt_validate_leeway_seconds must be a non-negative integer, got {seconds!r}"
             )

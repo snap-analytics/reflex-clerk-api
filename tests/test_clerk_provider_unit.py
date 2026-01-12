@@ -1,13 +1,6 @@
 import asyncio
-import sys
-from pathlib import Path
 
 import authlib.jose.errors as jose_errors
-
-
-# Ensure tests use the local custom component code (not an installed wheel).
-_CUSTOM_COMPONENTS_DIR = Path(__file__).resolve().parents[1] / "custom_components"
-sys.path.insert(0, str(_CUSTOM_COMPONENTS_DIR))
 
 
 def test_set_clerk_session_expired_token_clears(monkeypatch):

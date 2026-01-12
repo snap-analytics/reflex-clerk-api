@@ -13,11 +13,13 @@ sys.path.insert(0, str(_CUSTOM_COMPONENTS_DIR))
 def test_set_clerk_session_expired_token_clears(monkeypatch):
     """Expired tokens should not crash the handler; they should clear session."""
     # Import inside the test so the module is importable in different test layouts.
-    from reflex_clerk_api.clerk_provider import ClerkState
-
+    # We need the actual module object (not just ClerkState) to monkeypatch jwt.decode
+    # where it's used. importlib is required because reflex_clerk_api.clerk_provider
+    # resolves to the function via __init__.py re-exports.
     import importlib
 
     clerk_provider_module = importlib.import_module("reflex_clerk_api.clerk_provider")
+    from reflex_clerk_api.clerk_provider import ClerkState
 
     # Instantiate state in a framework-safe way for tests.
     state = ClerkState(_reflex_internal_init=True)
@@ -53,5 +55,3 @@ def test_clerk_session_synchronizer_js_contains_reconnect_safe_deps_and_skipcach
     js = ClerkSessionSynchronizer.create().add_custom_code()[0]
     assert "[isLoaded, isSignedIn, addEvents, getToken]" in js
     assert "skipCache: true" in js
-
-

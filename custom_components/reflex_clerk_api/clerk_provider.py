@@ -92,7 +92,21 @@ class ClerkState(rx.State):
 
         Default is 60 seconds. Increase if you see intermittent ExpiredTokenError
         due to clock drift between Clerk servers and your backend.
+
+        Args:
+            seconds: Non-negative integer, max 3600 (1 hour).
+
+        Raises:
+            ValueError: If seconds is negative or exceeds 3600.
         """
+        if not isinstance(seconds, int) or seconds < 0:
+            raise ValueError(
+                f"jwt_validate_leeway_seconds must be a non-negative integer, got {seconds!r}"
+            )
+        if seconds > 3600:
+            raise ValueError(
+                f"jwt_validate_leeway_seconds exceeds maximum of 3600 (1 hour), got {seconds}"
+            )
         cls._jwt_validate_leeway_seconds = seconds
 
     @property
@@ -326,12 +340,12 @@ class ClerkSessionSynchronizer(rx.Component):
 
         return [
             """
-function ClerkSessionSynchronizer({ children }) {
-  const { getToken, isLoaded, isSignedIn } = useAuth()
+function ClerkSessionSynchronizer({{ children }}) {{
+  const {{ getToken, isLoaded, isSignedIn }} = useAuth()
   const [ addEvents ] = useContext(EventLoopContext)
-  const lastSentRef = useRef({ stateKey: null, addEvents: null })
+  const lastSentRef = useRef({{ stateKey: null, addEvents: null }})
 
-  useEffect(() => {
+  useEffect(() => {{
       // Wait for all dependencies to be ready.
       if (!isLoaded || !addEvents) return
 
@@ -342,36 +356,35 @@ function ClerkSessionSynchronizer({ children }) {
         lastSentRef.current?.stateKey === stateKey &&
         lastSentRef.current?.addEvents === addEvents
       ) return
-      lastSentRef.current = { stateKey, addEvents }
+      lastSentRef.current = {{ stateKey, addEvents }}
 
-      if (isSignedIn) {
+      if (isSignedIn) {{
         // Prefer a fresh token; cached tokens can be close to expiry.
         // If this Clerk version doesn't support skipCache, fall back to the default call.
         Promise.resolve()
-          .then(() => getToken({ skipCache: true }))
+          .then(() => getToken({{ skipCache: true }}))
           .catch(() => getToken())
-          .then(token => {
-            if (token) {
-              addEvents([ReflexEvent("%s.set_clerk_session", {token})])
-            } else {
+          .then(token => {{
+            if (token) {{
+              addEvents([ReflexEvent("{state}.set_clerk_session", {{token}})])
+            }} else {{
               // Token unavailable despite isSignedIn - clear to avoid stuck auth state.
-              addEvents([ReflexEvent("%s.clear_clerk_session")])
-            }
-          }).catch(() => {
+              addEvents([ReflexEvent("{state}.clear_clerk_session")])
+            }}
+          }}).catch(() => {{
             // Token retrieval failed - clear to avoid stuck auth state.
-            addEvents([ReflexEvent("%s.clear_clerk_session")])
-          })
-      } else {
-        addEvents([ReflexEvent("%s.clear_clerk_session")])
-      }
-  }, [isLoaded, isSignedIn, addEvents, getToken])
+            addEvents([ReflexEvent("{state}.clear_clerk_session")])
+          }})
+      }} else {{
+        addEvents([ReflexEvent("{state}.clear_clerk_session")])
+      }}
+  }}, [isLoaded, isSignedIn, addEvents, getToken])
 
   return (
-      <>{children}</>
+      <>{{children}}</>
   )
-}
-"""
-            % (clerk_state_name, clerk_state_name, clerk_state_name, clerk_state_name)
+}}
+""".format(state=clerk_state_name)
         ]
 
 

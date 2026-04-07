@@ -48,3 +48,24 @@ def test_clerk_session_synchronizer_js_contains_reconnect_safe_deps_and_skipcach
     js = ClerkSessionSynchronizer.create().add_custom_code()[0]
     assert "[isLoaded, isSignedIn, addEvents, getToken]" in js
     assert "skipCache: true" in js
+
+
+def test_clerk_provider_adds_clerk_ui_import_by_default():
+    from reflex_clerk_api.clerk_provider import ClerkProvider
+
+    imports = ClerkProvider.create().add_imports()
+    assert imports.get("@clerk/ui") == ["ui"]
+
+
+def test_clerk_provider_defaults_ui_prop_to_imported_ui_symbol():
+    from reflex_clerk_api.clerk_provider import ClerkProvider
+
+    props = ClerkProvider.create().render()["props"]
+    assert "ui:ui" in props
+
+
+def test_clerk_provider_allows_ui_override():
+    from reflex_clerk_api.clerk_provider import ClerkProvider
+
+    props = ClerkProvider.create(ui="custom-ui").render()["props"]
+    assert 'ui:"custom-ui"' in props

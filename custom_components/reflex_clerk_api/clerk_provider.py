@@ -12,6 +12,7 @@ import reflex as rx
 from authlib.jose import JWTClaims, jwt
 from reflex.event import EventCallback, EventType, IndividualEventType
 from reflex.utils.exceptions import ImmutableStateError
+from reflex.vars.base import Var
 
 from reflex_clerk_api.base import ClerkBase
 
@@ -484,6 +485,9 @@ class ClerkProvider(ClerkBase):
     # trigger to what will be passed to the backend event handler function.
     # on_change: rx.EventHandler[lambda e: [e]]
 
+    ui: Any | None = None
+    """UI package pin for Clerk components (passed as ui={ui} from @clerk/ui)."""
+
     after_multi_session_single_sign_out_url: str = ""
     """The URL to navigate to after a successful sign-out from multiple sessions."""
 
@@ -586,8 +590,15 @@ class ClerkProvider(ClerkBase):
     waitlist_url: str = ""
     """The full URL or path to the waitlist page."""
 
+    def add_imports(self) -> rx.ImportDict:
+        # Import ui package to pin Clerk component versions when using structural CSS.
+        return {"@clerk/ui": ["ui"]}
+
     @classmethod
     def create(cls, *children, **props) -> Self:
+        # Default to ui={ui} unless caller explicitly supplies a different ui config.
+        if "ui" not in props:
+            props["ui"] = Var(_js_expr="ui", _var_type=Any)
         return cast(Self, super().create(*children, **props))
 
     def add_custom_code(self) -> list[str]:

@@ -1,15 +1,15 @@
 [build-system]
-requires = ["setuptools", "wheel", "hatchling"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project.optional-dependencies]
 dev = ["build", "twine"]
 
-[tool.setuptools.packages.find]
-where = ["custom_components"]
+[tool.hatch.build.targets.wheel]
+packages = ["custom_components/reflex_clerk_api"]
 
-[tool.setuptools.dynamic]
-version = { attr = "reflex_clerk_api.__version__" }
+[tool.hatch.build]
+artifacts = ["*.pyi"]
 
 [tool.hatch.version]
 path = "custom_components/reflex_clerk_api/__init__.py"
@@ -30,13 +30,12 @@ dynamic = ["version"]
 dependencies = [
     "authlib>=1.5.1",
     "clerk-backend-api>=4.0.0",
-    "reflex>=0.7.5",
+    "reflex>=0.8.0",
 ]
 
 classifiers = [
     "Development Status :: 4 - Beta",
     "Typing :: Typed",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -56,6 +55,14 @@ pythonpath = ["custom_components"]
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
+exclude = [
+    "**/*.pyi",  # Exclude auto-generated .pyi files (not committed, have generator bugs)
+    ".venv",     # Exclude virtual environment
+    "dist",      # Exclude build artifacts
+    "*.egg-info",
+    "**/.web",   # Exclude Reflex web build directory
+    "**/node_modules",  # Exclude npm dependencies
+]
 
 [tool.ruff.lint]
 extend-select = ["I", "RUF", "T20"]
@@ -74,5 +81,8 @@ dev = [
     "pytest-pretty>=1.2.0",
     "ruff>=0.9.10",
     "semver>=3.0.4",
-    "reflex==0.7.5",  # https://github.com/reflex-dev/reflex/issues/5114 -- Pinned until this is fixed
+    "reflex>=0.8.0",
+    "hatchling>=1.27.0",
+    "uvicorn>=0.38.0",
+    "psutil>=7.0.0",
 ]

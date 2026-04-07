@@ -25,8 +25,8 @@ keywords = ["reflex","reflex-custom-components", "clerk", "clerk-backend-api"]
 dynamic = ["version"]
 
 dependencies = [
-    "authlib>=1.5.1,<2.0.0",
-    "clerk-backend-api>=2.0.0,<3.0.0",
+    "authlib>=1.5.1",
+    "clerk-backend-api>=4.0.0",
     "reflex>=0.8.0",
 ]
 

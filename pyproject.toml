@@ -16,7 +16,7 @@ path = "custom_components/reflex_clerk_api/__init__.py"
 
 [project]
 name = "reflex-clerk-api"
-description = "Reflex custom component wrapping @clerk/clerk-react and integrating the clerk-backend-api"
+description = "Reflex custom component wrapping @clerk/react and integrating the clerk-backend-api"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.10"

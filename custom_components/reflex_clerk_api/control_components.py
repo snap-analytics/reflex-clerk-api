@@ -2,8 +2,6 @@ import reflex as rx
 
 from reflex_clerk_api.base import ClerkBase
 
-Javascript = str
-JSX = str
 SignInInitialValues = dict[str, str]
 SignUpInitialValues = dict[str, str]
 
@@ -18,19 +16,6 @@ class ClerkLoading(ClerkBase):
     """Only renders childen while Clerk authenticates the user."""
 
     tag = "ClerkLoading"
-
-
-class Protect(ClerkBase):
-    tag = "Protect"
-
-    condition: Javascript | None = None
-    "Optional conditional logic that renders the children if it returns true"
-    fallback: JSX | None = None
-    "An optional snippet of JSX to show when a user doesn't have the role or permission to access the protected content."
-    permission: str | None = None
-    "Optional string corresponding to a Role's Permission in the format org:<resource>:<action>"
-    role: str | None = None
-    "Optional string corresponding to an Organization's Role in the format org:<role>"
 
 
 class Show(ClerkBase):
@@ -89,26 +74,11 @@ class RedirectToCreateOrganization(ClerkBase):
     tag = "RedirectToCreateOrganization"
 
 
-class SignedIn(ClerkBase):
-    """Only renders children when the user is signed in."""
-
-    tag = "SignedIn"
-
-
-class SignedOut(ClerkBase):
-    """Only renders children when the user is signed out."""
-
-    tag = "SignedOut"
-
-
 clerk_loaded = ClerkLoaded.create
 clerk_loading = ClerkLoading.create
-protect = Protect.create
 show = Show.create
 redirect_to_sign_in = RedirectToSignIn.create
 redirect_to_sign_up = RedirectToSignUp.create
 redirect_to_user_profile = RedirectToUserProfile.create
 redirect_to_organization_profile = RedirectToOrganizationProfile.create
 redirect_to_create_organization = RedirectToCreateOrganization.create
-signed_in = SignedIn.create
-signed_out = SignedOut.create

@@ -13,10 +13,7 @@ from .clerk_provider import (
 from .control_components import (
     clerk_loaded,
     clerk_loading,
-    protect,
     redirect_to_user_profile,
-    signed_in,
-    signed_out,
     show,
 )
 from .billing_components import pricing_table
@@ -49,7 +46,6 @@ __all__ = [
     "organization_list",
     "organization_profile",
     "organization_switcher",
-    "protect",
     "pricing_table",
     "redirect_to_user_profile",
     "register_on_auth_change_handler",
@@ -59,8 +55,6 @@ __all__ = [
     "sign_up",
     "sign_up_button",
     "show",
-    "signed_in",
-    "signed_out",
     "update_user_phone_number",
     "user_button",
     "user_profile",

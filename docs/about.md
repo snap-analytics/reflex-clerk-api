@@ -4,14 +4,14 @@ Welcome to the Reflex Clerk API documentation! This package provides integration
 
 ## Overview
 
-Primarily, this package wraps the [@clerk/clerk-react](https://www.npmjs.com/package/@clerk/clerk-react) library, using the Clerk maintained [clerk-backend-api](https://pypi.org/project/clerk-backend-api/") python package to synchronize the reflex FastAPI backend with the Clerk frontend components.
+Primarily, this package wraps the [@clerk/react](https://www.npmjs.com/package/@clerk/react) library, using the Clerk maintained [clerk-backend-api](https://pypi.org/project/clerk-backend-api/") python package to synchronize the reflex FastAPI backend with the Clerk frontend components.
 
 ### Wrapped Components
 
 An overview of some of the clerk-react components that are wrapped here:
 
 - **ClerkProvider**: A component that wraps your app/page to handle Clerk authentication.
-- **Control Components**: Components such as `clerk_loaded`, `protect`, and `signed_in`, etc.
+- **Control Components**: Components such as `clerk_loaded`, `clerk_loading`, and `show`.
 - **Authentication Components**: Components for `sign_in` and `sign_up` that redirect the user to Clerk's authentication pages.
 - **Wrapper Components**: Button wrappers for `sign_in_button`, `sign_out_button`, and `user_button`, that you can wrap regular reflex components with.
 

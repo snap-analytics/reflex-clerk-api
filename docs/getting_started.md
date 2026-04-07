@@ -64,11 +64,13 @@ def index() -> rx.Component:
             rx.spinner(),
         ),
         clerk.clerk_loaded(
-            clerk.signed_in(
-                clerk.sign_out_button(rx.button("Sign out"))
+            clerk.show(
+                clerk.sign_out_button(rx.button("Sign out")),
+                when="signed-in",
             ),
-            clerk.signed_out(
-                clerk.sign_in_button(rx.button("Sign in"))
+            clerk.show(
+                clerk.sign_in_button(rx.button("Sign in")),
+                when="signed-out",
             ),
         ),
         publishable_key=os.environ["CLERK_PUBLISHABLE_KEY"],

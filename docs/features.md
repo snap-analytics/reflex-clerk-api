@@ -79,7 +79,7 @@ These determine what content is displayed based on the user's authentication sta
 
 - **ClerkLoading**: Displays content while Clerk is loading.
 
-- **Protect**: Protects specific content to ensure only authenticated users can access them.
+- **Show**: Conditionally renders content using `when="signed-in"`, `when="signed-out"`, or entitlement checks like `when={"permission": "org:x:y"}`.
 
 - **RedirectToSignIn**: Redirects users to the sign-in page if they are not authenticated.
 
@@ -91,7 +91,6 @@ These determine what content is displayed based on the user's authentication sta
 
 - **RedirectToCreateOrganization**: Redirects users to create an organization.
 
-- **SignedIn** and **SignedOut**: Conditional rendering based on user authentication state.
 
 ### Unstyled Components
 

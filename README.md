@@ -31,13 +31,15 @@ def index() -> rx.Component:
     return clerk.clerk_provider(
         rx.container(
             clerk.clerk_loaded(
-                clerk.signed_in(
+                clerk.show(
                     clerk.sign_on(
                         rx.button("Sign out"),
                     ),
+                    when="signed-in",
                 ),
-                clerk.signed_out(
+                clerk.show(
                     rx.button("Sign in"),
+                    when="signed-out",
                 ),
             ),
         ),
@@ -69,4 +71,4 @@ I use [Taskfile](https://taskfile.dev/) (similar to `makefile`) to make common t
 
 ## TODO:
 
-- How should the `condition` and `fallback` props be defined on `Protect`? They are supposed to be `Javascript` and `JSX` respectively, but are just `str` for now... Is `Javascript` `rx.Script`? And `JSX` `rx.Component`?
+- Add migration notes for deprecated wrappers removed in the next major release.

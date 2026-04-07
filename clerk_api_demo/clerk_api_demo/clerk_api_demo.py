@@ -85,8 +85,8 @@ def demo_page_header_and_description() -> rx.Component:
             rx.link(rx.code("reflex"), href="https://reflex.dev"),
             "components that wrap Clerk react components (",
             rx.link(
-                rx.code("@clerk/clerk-react"),
-                href="https://www.npmjs.com/package/@clerk/clerk-react",
+                rx.code("@clerk/react"),
+                href="https://www.npmjs.com/package/@clerk/react",
             ),
             ") and interact with the Clerk backend API.",
             size="4",
@@ -192,13 +192,15 @@ def getting_started() -> rx.Component:
                 def index() -> rx.Component:
                     return clerk.clerk_provider(
                         clerk.clerk_loaded(
-                            clerk.signed_in(
+                            clerk.show(
                                 clerk.sign_on(
                                     rx.button("Sign out"),
                                 ),
+                                when="signed-in",
                             ),
-                            clerk.signed_out(
+                            clerk.show(
                                 rx.button("Sign in"),
+                                when="signed-out",
                             ),
                         ),
                         publishable_key=os.environ["CLERK_PUBLISHABLE_KEY"],
@@ -439,9 +441,10 @@ def clerk_loaded_demo() -> rx.Component:
         rx.vstack(
             rx.text("You'll only see content below if you are signed in"),
             rx.divider(),
-            clerk.signed_in(
+            clerk.show(
                 rx.text("You are signed in.", data_testid="you_are_signed_in"),
                 clerk.sign_out_button(rx.button("Sign out", width="100%")),
+                when="signed-in",
             ),
         )
     )
@@ -449,9 +452,10 @@ def clerk_loaded_demo() -> rx.Component:
         rx.vstack(
             rx.text("You'll only see content below if you are signed out"),
             rx.divider(),
-            clerk.signed_out(
+            clerk.show(
                 rx.text("You are signed out.", data_testid="you_are_signed_out"),
                 clerk.sign_in_button(rx.button("Sign in", width="100%")),
+                when="signed-out",
             ),
         )
     )
@@ -477,7 +481,7 @@ def clerk_loaded_demo() -> rx.Component:
     return demo_card(
         "Clerk loaded and signed in/out areas",
         rx.markdown(
-            "Demo of `clerk_loaded`, `clerk_loading`, and `signed_in`, `signed_out` components."
+            "Demo of `clerk_loaded`, `clerk_loading`, and `show` components."
         ),
         demo,
     )
@@ -496,18 +500,20 @@ def links_to_demo_pages() -> rx.Component:
 
             But, you can also create your own with more customization.""")
         ),
-        clerk.signed_out(
+        clerk.show(
             rx.grid(
                 rx.link(rx.button("Go to sign up page", width="100%"), href="/sign-up"),
                 rx.link(rx.button("Go to sign in page", width="100%"), href="/sign-in"),
                 width="100%",
                 columns="2",
                 spacing="3",
-            )
+            ),
+            when="signed-out",
         ),
-        clerk.signed_in(
+        clerk.show(
             rx.text("Sign out to see links to default sign-in and sign-up pages."),
             clerk.sign_out_button(rx.button("Sign out", width="100%")),
+            when="signed-in",
         ),
     )
     return demo_card(
@@ -531,7 +537,7 @@ def user_info_demo() -> rx.Component:
             Test credentials will not have a name or image by default.
             """)
         ),
-        clerk.signed_in(
+        clerk.show(
             rx.hstack(
                 rx.card(
                     rx.data_list.root(
@@ -548,9 +554,10 @@ def user_info_demo() -> rx.Component:
                 width="100%",
                 justify="center",
                 spacing="5",
-            )
+            ),
+            when="signed-in",
         ),
-        clerk.signed_out(rx.text("Sign in to see user information.")),
+        clerk.show(rx.text("Sign in to see user information."), when="signed-out"),
     )
 
     return demo_card(
@@ -629,10 +636,11 @@ def demo_header() -> rx.Component:
                 data_list_item("password", rx.code("test-clerk-password")),
             ),
             rx.hstack(
-                clerk.signed_in(
-                    clerk.sign_out_button(rx.button("Sign out", data_testid="sign_out"))
+                clerk.show(
+                    clerk.sign_out_button(rx.button("Sign out", data_testid="sign_out")),
+                    when="signed-in",
                 ),
-                clerk.signed_out(
+                clerk.show(
                     rx.hstack(
                         clerk.sign_in_button(
                             rx.button("Sign in", data_testid="sign_in")
@@ -641,6 +649,7 @@ def demo_header() -> rx.Component:
                             rx.button("Sign up", data_testid="sign_up")
                         ),
                     ),
+                    when="signed-out",
                 ),
             ),
         ),

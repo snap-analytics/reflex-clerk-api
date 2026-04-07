@@ -392,7 +392,7 @@ class ClerkSessionSynchronizer(rx.Component):
         self,
     ) -> rx.ImportDict:
         addl_imports: rx.ImportDict = {
-            "@clerk/clerk-react": ["useAuth"],
+            "@clerk/react": ["useAuth"],
             "react": ["useContext", "useEffect", "useRef"],
             "$/utils/context": ["EventLoopContext"],
             "$/utils/state": ["ReflexEvent"],

@@ -1,3 +1,5 @@
+import reflex as rx
+
 from reflex_clerk_api.base import ClerkBase
 
 Javascript = str
@@ -29,6 +31,22 @@ class Protect(ClerkBase):
     "Optional string corresponding to a Role's Permission in the format org:<resource>:<action>"
     role: str | None = None
     "Optional string corresponding to an Organization's Role in the format org:<role>"
+
+
+class Show(ClerkBase):
+    tag = "Show"
+
+    when: dict | str | None = None
+    (
+        "The condition to evaluate. Supports 'signed-in' / 'signed-out' strings and "
+        "object checks like {'feature': '...'} or {'plan': '...'}."
+    )
+    # Known limitation: callback-style `when=(has) => ...` is not supported with the
+    # current str/dict prop typing and would serialize as a quoted string literal.
+    fallback: rx.Component | None = None
+    "Optional UI to render if the condition fails."
+    treat_pending_as_signed_out: bool | None = None
+    "Whether pending sessions are treated as signed out. Defaults to true in Clerk."
 
 
 class RedirectToSignIn(ClerkBase):
@@ -86,6 +104,7 @@ class SignedOut(ClerkBase):
 clerk_loaded = ClerkLoaded.create
 clerk_loading = ClerkLoading.create
 protect = Protect.create
+show = Show.create
 redirect_to_sign_in = RedirectToSignIn.create
 redirect_to_sign_up = RedirectToSignUp.create
 redirect_to_user_profile = RedirectToUserProfile.create

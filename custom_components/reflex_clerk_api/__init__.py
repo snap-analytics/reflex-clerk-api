@@ -17,7 +17,9 @@ from .control_components import (
     redirect_to_user_profile,
     signed_in,
     signed_out,
+    show,
 )
+from .billing_components import pricing_table
 from .pages import add_sign_in_page, add_sign_up_page
 from .unstyled_components import (
     SignInButton,
@@ -48,6 +50,7 @@ __all__ = [
     "organization_profile",
     "organization_switcher",
     "protect",
+    "pricing_table",
     "redirect_to_user_profile",
     "register_on_auth_change_handler",
     "sign_in",
@@ -55,6 +58,7 @@ __all__ = [
     "sign_out_button",
     "sign_up",
     "sign_up_button",
+    "show",
     "signed_in",
     "signed_out",
     "update_user_phone_number",

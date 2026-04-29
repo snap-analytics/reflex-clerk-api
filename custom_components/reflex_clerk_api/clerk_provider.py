@@ -111,12 +111,17 @@ class ClerkState(rx.State):
             )
         cls._jwt_validate_leeway_seconds = seconds
 
+    @classmethod
+    def get_clerk_client(cls) -> clerk_backend_api.Clerk:
+        """Shared Clerk backend client (class-backed); safe to use outside state locks."""
+        if cls._client is None:
+            cls._set_client()
+        assert cls._client is not None
+        return cls._client
+
     @property
     def client(self) -> clerk_backend_api.Clerk:
-        if self._client is None:
-            self._set_client()
-        assert self._client is not None
-        return self._client
+        return type(self).get_clerk_client()
 
     @rx.event(background=True)
     async def set_clerk_session(self, token: str) -> EventType:
@@ -185,9 +190,11 @@ class ClerkState(rx.State):
             logging.warning("Waited for auth, but no on_load events registered.")
             on_loads = []
 
-        start_time = time.time()
-        while time.time() - start_time < self._auth_wait_timeout_seconds:
-            if self.auth_checked:
+        deadline = time.monotonic() + type(self)._auth_wait_timeout_seconds
+        while time.monotonic() < deadline:
+            async with self:
+                auth_checked = self.auth_checked
+            if auth_checked:
                 logging.debug("Auth check complete")
                 return on_loads
             logging.debug("...waiting for auth...")
@@ -290,52 +297,67 @@ class ClerkUser(rx.State):
     # Set to True when the state is registered on the ClerkState to avoid registering it multiple times.
     _is_registered: ClassVar[bool] = False
 
-    @rx.event
+    @rx.event(background=True)
     async def load_user(self) -> None:
-        try:
-            user: clerk_backend_api.models.User = await get_user(self)
-        except MissingUserError:
+        async with self:
+            clerk_state = await self.get_state(ClerkState)
+
+        async with clerk_state:
+            user_id = clerk_state.user_id
+
+        client = ClerkState.get_clerk_client()
+
+        if user_id is None:
             logging.debug("Clearing user state")
-            self.reset()
+            async with self:
+                self.reset()
+            return
+
+        user = await client.users.get_async(user_id=user_id)
+        if user is None:
+            logging.debug("Clearing user state")
+            async with self:
+                self.reset()
             return
 
         logging.debug("Updating user state")
-        self.first_name = (
-            user.first_name
-            if user.first_name and user.first_name != clerk_backend_api.UNSET
-            else ""
-        )
-        self.last_name = (
-            user.last_name
-            if user.last_name and user.last_name != clerk_backend_api.UNSET
-            else ""
-        )
-        self.username = (
-            user.username
-            if user.username and user.username != clerk_backend_api.UNSET
-            else ""
-        )
-        self.email_address = (
-            user.email_addresses[0].email_address if user.email_addresses else ""
-        )
-        # Load primary phone number and its ID, falling back to the first if needed
-        if user.phone_numbers:
-            primary_phone = None
-            primary_id = getattr(user, "primary_phone_number_id", None)
-            if primary_id is not None:
-                for pn in user.phone_numbers:
-                    if getattr(pn, "id", None) == primary_id:
-                        primary_phone = pn
-                        break
-            if primary_phone is None:
-                primary_phone = user.phone_numbers[0]
-            self.phone_number = getattr(primary_phone, "phone_number", "") or ""
-            self.phone_number_id = getattr(primary_phone, "id", "") or ""
-        else:
-            self.phone_number = ""
-            self.phone_number_id = ""
-        self.has_image = True if user.has_image is True else False
-        self.image_url = user.image_url or ""
+        async with self:
+            self.first_name = (
+                user.first_name
+                if user.first_name and user.first_name != clerk_backend_api.UNSET
+                else ""
+            )
+            self.last_name = (
+                user.last_name
+                if user.last_name and user.last_name != clerk_backend_api.UNSET
+                else ""
+            )
+            self.username = (
+                user.username
+                if user.username and user.username != clerk_backend_api.UNSET
+                else ""
+            )
+            self.email_address = (
+                user.email_addresses[0].email_address if user.email_addresses else ""
+            )
+            # Load primary phone number and its ID, falling back to the first if needed
+            if user.phone_numbers:
+                primary_phone = None
+                primary_id = getattr(user, "primary_phone_number_id", None)
+                if primary_id is not None:
+                    for pn in user.phone_numbers:
+                        if getattr(pn, "id", None) == primary_id:
+                            primary_phone = pn
+                            break
+                if primary_phone is None:
+                    primary_phone = user.phone_numbers[0]
+                self.phone_number = getattr(primary_phone, "phone_number", "") or ""
+                self.phone_number_id = getattr(primary_phone, "id", "") or ""
+            else:
+                self.phone_number = ""
+                self.phone_number_id = ""
+            self.has_image = True if user.has_image is True else False
+            self.image_url = user.image_url or ""
 
     @rx.event
     async def update_phone_number(

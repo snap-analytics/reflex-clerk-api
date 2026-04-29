@@ -1,8 +1,6 @@
 import reflex as rx
 
 CLERK_REACT_VERSION = "6.4.6"
-CLERK_UI_VERSION = "1.6.8"
-CLERK_JS_VERSION = "6.7.8"
 
 
 class ClerkBase(rx.Component):

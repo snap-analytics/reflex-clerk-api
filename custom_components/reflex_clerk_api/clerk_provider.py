@@ -190,7 +190,7 @@ class ClerkState(rx.State):
             logging.warning("Waited for auth, but no on_load events registered.")
             on_loads = []
 
-        deadline = time.monotonic() + type(self)._auth_wait_timeout_seconds
+        deadline = time.monotonic() + ClerkState._auth_wait_timeout_seconds
         while time.monotonic() < deadline:
             async with self:
                 auth_checked = self.auth_checked

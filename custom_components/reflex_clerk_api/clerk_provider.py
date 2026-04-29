@@ -14,7 +14,7 @@ from reflex.event import EventCallback, EventType, IndividualEventType
 from reflex.utils.exceptions import ImmutableStateError
 from reflex.vars.base import Var
 
-from reflex_clerk_api.base import ClerkBase
+from reflex_clerk_api.base import CLERK_JS_VERSION, CLERK_UI_VERSION, ClerkBase
 
 from .models import Appearance
 
@@ -506,6 +506,13 @@ class ClerkProvider(ClerkBase):
     # The React component tag.
     tag = "ClerkProvider"
 
+    _rename_props: dict[str, str] = {
+        "clerk_js_url": "__internal_clerkJSUrl",
+        "clerk_js_version": "__internal_clerkJSVersion",
+        "clerk_ui_url": "__internal_clerkUIUrl",
+        "clerk_ui_version": "__internal_clerkUIVersion",
+    }
+
     # NOTE: This might be relevant to getting apperance.base_theme to work.
     # lib_dependencies: list[str] = ["@clerk/themes"]
     # def add_imports(self) -> rx.ImportDict:
@@ -554,6 +561,12 @@ class ClerkProvider(ClerkBase):
 
     clerk_js_version: str = ""
     """Define the npm version for @clerk/clerk-js."""
+
+    clerk_ui_url: str = ""
+    """Define the URL that @clerk/ui should be hot-loaded from."""
+
+    clerk_ui_version: str = ""
+    """Define the npm version for @clerk/ui."""
 
     # domain: str | JSCallable[[str], bool] = ""
     domain: str = ""
@@ -634,13 +647,15 @@ class ClerkProvider(ClerkBase):
 
     def add_imports(self) -> rx.ImportDict:
         # Import ui package to pin Clerk component versions when using structural CSS.
-        return {"@clerk/ui": ["ui"]}
+        return {f"@clerk/ui@{CLERK_UI_VERSION}": ["ui"]}
 
     @classmethod
     def create(cls, *children, **props) -> Self:
         # Default to ui={ui} unless caller explicitly supplies a different ui config.
         if "ui" not in props:
             props["ui"] = Var(_js_expr="ui", _var_type=Any)
+        props.setdefault("clerk_js_version", CLERK_JS_VERSION)
+        props.setdefault("clerk_ui_version", CLERK_UI_VERSION)
         return cast(Self, super().create(*children, **props))
 
     def add_custom_code(self) -> list[str]:

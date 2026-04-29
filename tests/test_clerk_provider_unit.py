@@ -38,7 +38,9 @@ def test_set_clerk_session_expired_token_clears(monkeypatch):
 
     result = asyncio.run(ClerkState.set_clerk_session.fn(state, token="fake"))
     assert validate_calls["leeway"] == 60
-    assert result == ClerkState.clear_clerk_session
+    assert result == []
+    assert state.auth_checked is True
+    assert state.is_signed_in is False
 
 
 def test_clerk_session_synchronizer_js_contains_reconnect_safe_deps_and_skipcache():
@@ -48,6 +50,7 @@ def test_clerk_session_synchronizer_js_contains_reconnect_safe_deps_and_skipcach
     js = ClerkSessionSynchronizer.create().add_custom_code()[0]
     assert "[isLoaded, isSignedIn, addEvents, getToken]" in js
     assert "skipCache: true" in js
+    assert "isJwtExpired(token)" in js
 
 
 def test_clerk_provider_adds_clerk_ui_import_by_default():

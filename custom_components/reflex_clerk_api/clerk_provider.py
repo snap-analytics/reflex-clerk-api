@@ -154,7 +154,12 @@ class ClerkState(rx.State):
             jose_errors.MissingClaimError,
         ) as e:
             logging.warning(f"JWT token validation failed: {type(e).__name__}: {e}")
-            return ClerkState.clear_clerk_session
+            async with self:
+                self.is_signed_in = False
+                self.claims = None
+                self.user_id = None
+                self.auth_checked = True
+            return list(self._dependent_handlers.values())
 
         async with self:
             self.is_signed_in = True
@@ -432,6 +437,15 @@ function ClerkSessionSynchronizer({{ children }}) {{
   const [ addEvents ] = useContext(EventLoopContext)
   const lastSentRef = useRef({{ stateKey: null, addEvents: null }})
 
+  const isJwtExpired = (token) => {{
+    try {{
+      const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")))
+      return typeof payload.exp === "number" && payload.exp <= Math.floor(Date.now() / 1000)
+    }} catch {{
+      return false
+    }}
+  }}
+
   useEffect(() => {{
       // Wait for all dependencies to be ready.
       if (!isLoaded || !addEvents) return
@@ -453,6 +467,12 @@ function ClerkSessionSynchronizer({{ children }}) {{
           .catch(() => getToken())
           .then(token => {{
             if (token) {{
+              if (isJwtExpired(token)) {{
+                // Avoid sending already-expired JWTs to the backend, which would otherwise leave
+                // auth waiters racing a validation failure.
+                addEvents([ReflexEvent("{state}.clear_clerk_session")])
+                return
+              }}
               addEvents([ReflexEvent("{state}.set_clerk_session", {{token}})])
             }} else {{
               // Token unavailable despite isSignedIn - clear to avoid stuck auth state.

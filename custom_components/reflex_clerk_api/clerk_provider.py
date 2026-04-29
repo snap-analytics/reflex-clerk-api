@@ -654,8 +654,8 @@ class ClerkProvider(ClerkBase):
         # Default to ui={ui} unless caller explicitly supplies a different ui config.
         if "ui" not in props:
             props["ui"] = Var(_js_expr="ui", _var_type=Any)
-        props.setdefault("clerk_js_version", CLERK_JS_VERSION)
-        props.setdefault("clerk_ui_version", CLERK_UI_VERSION)
+        props.setdefault("__internal_clerkJSVersion", CLERK_JS_VERSION)
+        props.setdefault("__internal_clerkUIVersion", CLERK_UI_VERSION)
         return cast(Self, super().create(*children, **props))
 
     def add_custom_code(self) -> list[str]:

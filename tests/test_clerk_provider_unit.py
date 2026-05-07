@@ -84,10 +84,12 @@ def test_clerk_base_components_import_pinned_clerk_react():
         assert all(import_var.render is False for import_var in imports[dependency])
 
 
-def test_clerk_provider_does_not_auto_import_clerk_ui_by_default():
+def test_clerk_provider_imports_pinned_clerk_ui_by_default():
+    from reflex_clerk_api.base import CLERK_UI_LIBRARY
     from reflex_clerk_api.clerk_provider import ClerkProvider
 
     imports = ClerkProvider.create().add_imports()
+    assert imports.get(CLERK_UI_LIBRARY) == ["ui"]
     assert "@clerk/ui" not in imports
 
 
@@ -96,7 +98,8 @@ def test_clerk_provider_defaults_clerk_ui_version():
     from reflex_clerk_api.clerk_provider import ClerkProvider
 
     props = ClerkProvider.create().render()["props"]
-    assert f'clerkUiVersion:"{CLERK_UI_VERSION}"' in props
+    assert f'__internal_clerkUIVersion:"{CLERK_UI_VERSION}"' in props
+    assert "ui:ui" in props
 
 
 def test_clerk_provider_allows_ui_override():
@@ -110,18 +113,19 @@ def test_clerk_provider_defaults_clerk_js_version():
     from reflex_clerk_api.base import CLERK_JS_VERSION, CLERK_UI_VERSION
     from reflex_clerk_api.clerk_provider import ClerkProvider, clerk_provider
 
-    assert f'clerkJsVersion:"{CLERK_JS_VERSION}"' in ClerkProvider.create().render()[
+    assert f'__internal_clerkJSVersion:"{CLERK_JS_VERSION}"' in ClerkProvider.create().render()[
         "props"
     ]
     props = clerk_provider(publishable_key="pk_test").render()["props"]
-    assert f'clerkJsVersion:"{CLERK_JS_VERSION}"' in props
-    assert f'clerkUiVersion:"{CLERK_UI_VERSION}"' in props
+    assert f'__internal_clerkJSVersion:"{CLERK_JS_VERSION}"' in props
+    assert f'__internal_clerkUIVersion:"{CLERK_UI_VERSION}"' in props
+    assert "ui:ui" in props
 
 
 def test_clerk_provider_allows_clerk_frontend_version_overrides():
     from reflex_clerk_api.clerk_provider import ClerkProvider, clerk_provider
 
-    assert 'clerkJsVersion:"6.99.0"' in ClerkProvider.create(
+    assert '__internal_clerkJSVersion:"6.99.0"' in ClerkProvider.create(
         clerk_js_version="6.99.0",
         clerk_ui_version="1.99.0",
     ).render()["props"]
@@ -130,8 +134,8 @@ def test_clerk_provider_allows_clerk_frontend_version_overrides():
         clerk_js_version="6.99.0",
         clerk_ui_version="1.99.0",
     ).render()["props"]
-    assert 'clerkJsVersion:"6.99.0"' in provider_props
-    assert 'clerkUiVersion:"1.99.0"' in provider_props
+    assert '__internal_clerkJSVersion:"6.99.0"' in provider_props
+    assert '__internal_clerkUIVersion:"1.99.0"' in provider_props
 
 
 def test_wrap_app_defaults_clerk_js_version():
@@ -143,8 +147,9 @@ def test_wrap_app_defaults_clerk_js_version():
 
     component = app.app_wraps[(1, "ClerkProvider")](None)
     props = component.render()["props"]
-    assert f'clerkJsVersion:"{CLERK_JS_VERSION}"' in props
-    assert f'clerkUiVersion:"{CLERK_UI_VERSION}"' in props
+    assert f'__internal_clerkJSVersion:"{CLERK_JS_VERSION}"' in props
+    assert f'__internal_clerkUIVersion:"{CLERK_UI_VERSION}"' in props
+    assert "ui:ui" in props
 
 
 def test_wrap_app_allows_clerk_frontend_version_overrides():
@@ -160,13 +165,12 @@ def test_wrap_app_allows_clerk_frontend_version_overrides():
 
     component = app.app_wraps[(1, "ClerkProvider")](None)
     props = component.render()["props"]
-    assert 'clerkJsVersion:"6.99.0"' in props
-    assert 'clerkUiVersion:"1.99.0"' in props
+    assert '__internal_clerkJSVersion:"6.99.0"' in props
+    assert '__internal_clerkUIVersion:"1.99.0"' in props
 
 
 def test_configure_clerk_frontend_versions_updates_field_defaults():
     from reflex_clerk_api.base import (
-        DEFAULT_CLERK_FRONTEND_VERSIONS,
         configure_clerk_frontend_versions,
         reset_clerk_frontend_versions,
     )
@@ -182,10 +186,11 @@ def test_configure_clerk_frontend_versions_updates_field_defaults():
 
         assert versions.react_library == "@clerk/react@6.7.0"
         assert UserButton.library == versions.react_library
-        assert UserButton.lib_dependencies == list(versions.dependency_libraries)
+        assert UserButton.lib_dependencies == versions.dependency_libraries
         assert UserButton.get_fields()["library"].default == versions.react_library
-        assert UserButton.get_fields()["lib_dependencies"].default == list(
-            versions.dependency_libraries
+        assert (
+            UserButton.get_fields()["lib_dependencies"].default
+            == versions.dependency_libraries
         )
         assert UserButton.create().library == versions.react_library
         assert versions.react_library in UserButton.create()._get_imports()
@@ -195,10 +200,9 @@ def test_configure_clerk_frontend_versions_updates_field_defaults():
         )
         assert ClerkProvider.get_fields()["clerk_ui_version"].default == "1.10.0"
         props = ClerkProvider.create().render()["props"]
-        assert 'clerkJsVersion:"6.11.0"' in props
-        assert 'clerkUiVersion:"1.10.0"' in props
+        assert '__internal_clerkJSVersion:"6.11.0"' in props
+        assert '__internal_clerkUIVersion:"1.10.0"' in props
     finally:
-        configure_clerk_frontend_versions(DEFAULT_CLERK_FRONTEND_VERSIONS)
         reset_clerk_frontend_versions()
 
 

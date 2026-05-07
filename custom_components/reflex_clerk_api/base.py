@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from dataclasses import dataclass, replace
+from typing import Any
 
 import reflex as rx
 
@@ -70,7 +71,7 @@ class ClerkBase(rx.Component):
     library = CLERK_REACT_LIBRARY
     lib_dependencies: tuple[str, ...] = DEFAULT_CLERK_FRONTEND_VERSIONS.dependency_libraries
 
-    def __init_subclass__(cls, **kwargs) -> None:
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         """Keep future subclasses aligned with the active frontend version set."""
         super().__init_subclass__(**kwargs)
         _sync_clerk_component_class(cls)

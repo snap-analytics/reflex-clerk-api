@@ -17,6 +17,7 @@ from reflex_clerk_api.base import (
     ClerkBase,
     get_clerk_frontend_versions,
     get_clerk_react_library,
+    get_clerk_ui_library,
 )
 
 from .models import Appearance
@@ -509,11 +510,12 @@ class ClerkProvider(ClerkBase):
     # The React component tag.
     tag = "ClerkProvider"
 
-    _rename_props: dict[str, str] = {
-        "clerk_js_url": "__internal_clerkJSUrl",
-        "clerk_js_version": "__internal_clerkJSVersion",
-        "clerk_ui_url": "__internal_clerkUIUrl",
-        "clerk_ui_version": "__internal_clerkUIVersion",
+    _rename_props: ClassVar[dict[str, str]] = {
+        # Reflex applies renames after snake_case props are converted to camelCase.
+        "clerkJsUrl": "__internal_clerkJSUrl",
+        "clerkJsVersion": "__internal_clerkJSVersion",
+        "clerkUiUrl": "__internal_clerkUIUrl",
+        "clerkUiVersion": "__internal_clerkUIVersion",
     }
 
     # NOTE: This might be relevant to getting apperance.base_theme to work.
@@ -650,7 +652,11 @@ class ClerkProvider(ClerkBase):
 
     @classmethod
     def create(cls, *children, **props) -> Self:
+        props.setdefault("ui", rx.Var(_js_expr="ui", _var_type=Any))
         return cast(Self, super().create(*children, **props))
+
+    def add_imports(self) -> rx.ImportDict:
+        return {get_clerk_ui_library(): ["ui"]}
 
     def add_custom_code(self) -> list[str]:
         return []

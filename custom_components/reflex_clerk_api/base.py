@@ -68,9 +68,9 @@ class ClerkBase(rx.Component):
     # The React library to wrap.
     # `Show` is exported from `@clerk/react` (v6+), not `@clerk/clerk-react`.
     library = CLERK_REACT_LIBRARY
-    lib_dependencies = list(DEFAULT_CLERK_FRONTEND_VERSIONS.dependency_libraries)
+    lib_dependencies: tuple[str, ...] = DEFAULT_CLERK_FRONTEND_VERSIONS.dependency_libraries
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs) -> None:
         """Keep future subclasses aligned with the active frontend version set."""
         super().__init_subclass__(**kwargs)
         _sync_clerk_component_class(cls)
@@ -146,10 +146,10 @@ def _sync_clerk_component_class(component_cls: type[rx.Component]) -> None:
     if "lib_dependencies" in fields:
         fields["lib_dependencies"].default = list(versions.dependency_libraries)
     if "clerk_js_version" in fields:
-        setattr(component_cls, "clerk_js_version", versions.clerk_js_version)
+        component_cls.clerk_js_version = versions.clerk_js_version
         fields["clerk_js_version"].default = versions.clerk_js_version
     if "clerk_ui_version" in fields:
-        setattr(component_cls, "clerk_ui_version", versions.ui_version)
+        component_cls.clerk_ui_version = versions.ui_version
         fields["clerk_ui_version"].default = versions.ui_version
 
 
@@ -164,3 +164,6 @@ def _iter_clerk_component_subclasses(
     for subclass in component_cls.__subclasses__():
         yield subclass
         yield from _iter_clerk_component_subclasses(subclass)
+
+
+_sync_clerk_component_class(ClerkBase)

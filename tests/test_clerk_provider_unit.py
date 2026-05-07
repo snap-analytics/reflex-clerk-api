@@ -50,7 +50,14 @@ def test_clerk_session_synchronizer_js_contains_reconnect_safe_deps_and_skipcach
     from reflex_clerk_api.clerk_provider import ClerkSessionSynchronizer
 
     js = ClerkSessionSynchronizer.create().add_custom_code()[0]
-    assert "[isLoaded, isSignedIn, addEvents, getToken]" in js
+    assert "orgId" in js
+    assert "sessionId" in js
+    assert "userId" in js
+    assert (
+        '[\"signed_in\", userId || \"\", orgId || \"\", sessionId || \"\"].join(\":\")'
+        in js
+    )
+    assert "[isLoaded, isSignedIn, userId, orgId, sessionId, addEvents, getToken]" in js
     assert "skipCache: true" in js
     assert "isJwtExpired(token)" in js
 

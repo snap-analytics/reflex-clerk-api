@@ -13,7 +13,11 @@ from authlib.jose import JWTClaims, jwt
 from reflex.event import EventCallback, EventType, IndividualEventType
 from reflex.utils.exceptions import ImmutableStateError
 
-from reflex_clerk_api.base import ClerkBase
+from reflex_clerk_api.base import (
+    ClerkBase,
+    get_clerk_frontend_versions,
+    get_clerk_react_library,
+)
 
 from .models import Appearance
 
@@ -419,7 +423,7 @@ class ClerkSessionSynchronizer(rx.Component):
         self,
     ) -> rx.ImportDict:
         addl_imports: rx.ImportDict = {
-            "@clerk/react": ["useAuth"],
+            get_clerk_react_library(): ["useAuth"],
             "react": ["useContext", "useEffect", "useRef"],
             "$/utils/context": ["EventLoopContext"],
             "$/utils/state": ["ReflexEvent"],
@@ -558,13 +562,13 @@ class ClerkProvider(ClerkBase):
     clerk_js_variant: str | None = None
     """If your web application only uses control components, set this to 'headless'."""
 
-    clerk_js_version: str = ""
+    clerk_js_version: str = get_clerk_frontend_versions().clerk_js_version
     """Define the npm version for @clerk/clerk-js."""
 
     clerk_ui_url: str = ""
     """Define the URL that @clerk/ui should be hot-loaded from."""
 
-    clerk_ui_version: str = ""
+    clerk_ui_version: str = get_clerk_frontend_versions().ui_version
     """Define the npm version for @clerk/ui."""
 
     # domain: str | JSCallable[[str], bool] = ""

@@ -186,10 +186,11 @@ def test_configure_clerk_frontend_versions_updates_field_defaults():
 
         assert versions.react_library == "@clerk/react@6.7.0"
         assert UserButton.library == versions.react_library
-        assert UserButton.lib_dependencies == list(versions.dependency_libraries)
+        assert UserButton.lib_dependencies == versions.dependency_libraries
         assert UserButton.get_fields()["library"].default == versions.react_library
-        assert UserButton.get_fields()["lib_dependencies"].default == list(
-            versions.dependency_libraries
+        assert (
+            UserButton.get_fields()["lib_dependencies"].default
+            == versions.dependency_libraries
         )
         assert UserButton.create().library == versions.react_library
         assert versions.react_library in UserButton.create()._get_imports()

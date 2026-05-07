@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from dataclasses import dataclass, replace
-from typing import Any
 
 import reflex as rx
 
@@ -71,7 +70,7 @@ class ClerkBase(rx.Component):
     library = CLERK_REACT_LIBRARY
     lib_dependencies: tuple[str, ...] = DEFAULT_CLERK_FRONTEND_VERSIONS.dependency_libraries
 
-    def __init_subclass__(cls, **kwargs: Any) -> None:
+    def __init_subclass__(cls, **kwargs: object) -> None:
         """Keep future subclasses aligned with the active frontend version set."""
         super().__init_subclass__(**kwargs)
         _sync_clerk_component_class(cls)
@@ -139,13 +138,13 @@ def _sync_clerk_component_class(component_cls: type[rx.Component]) -> None:
     """Sync class attributes and Reflex field defaults for Clerk components."""
     versions = get_clerk_frontend_versions()
     component_cls.library = versions.react_library
-    component_cls.lib_dependencies = list(versions.dependency_libraries)
+    component_cls.lib_dependencies = versions.dependency_libraries
 
     fields = component_cls.get_fields()
     if "library" in fields:
         fields["library"].default = versions.react_library
     if "lib_dependencies" in fields:
-        fields["lib_dependencies"].default = list(versions.dependency_libraries)
+        fields["lib_dependencies"].default = versions.dependency_libraries
     if "clerk_js_version" in fields:
         component_cls.clerk_js_version = versions.clerk_js_version
         fields["clerk_js_version"].default = versions.clerk_js_version

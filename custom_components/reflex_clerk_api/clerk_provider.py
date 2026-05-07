@@ -12,13 +12,11 @@ import reflex as rx
 from authlib.jose import JWTClaims, jwt
 from reflex.event import EventCallback, EventType, IndividualEventType
 from reflex.utils.exceptions import ImmutableStateError
-from reflex.vars.base import Var
 
 from reflex_clerk_api.base import (
     ClerkBase,
     get_clerk_frontend_versions,
     get_clerk_react_library,
-    get_clerk_ui_library,
 )
 
 from .models import Appearance
@@ -511,6 +509,13 @@ class ClerkProvider(ClerkBase):
     # The React component tag.
     tag = "ClerkProvider"
 
+    _rename_props: dict[str, str] = {
+        "clerk_js_url": "__internal_clerkJSUrl",
+        "clerk_js_version": "__internal_clerkJSVersion",
+        "clerk_ui_url": "__internal_clerkUIUrl",
+        "clerk_ui_version": "__internal_clerkUIVersion",
+    }
+
     # NOTE: This might be relevant to getting apperance.base_theme to work.
     # lib_dependencies: list[str] = ["@clerk/themes"]
     # def add_imports(self) -> rx.ImportDict:
@@ -533,7 +538,7 @@ class ClerkProvider(ClerkBase):
     # on_change: rx.EventHandler[lambda e: [e]]
 
     ui: Any | None = None
-    """UI package pin for Clerk components (passed as ui={ui} from @clerk/ui)."""
+    """Optional UI package override for Clerk components."""
 
     after_multi_session_single_sign_out_url: str = ""
     """The URL to navigate to after a successful sign-out from multiple sessions."""
@@ -559,6 +564,12 @@ class ClerkProvider(ClerkBase):
 
     clerk_js_version: str = get_clerk_frontend_versions().clerk_js_version
     """Define the npm version for @clerk/clerk-js."""
+
+    clerk_ui_url: str = ""
+    """Define the URL that @clerk/ui should be hot-loaded from."""
+
+    clerk_ui_version: str = get_clerk_frontend_versions().ui_version
+    """Define the npm version for @clerk/ui."""
 
     # domain: str | JSCallable[[str], bool] = ""
     domain: str = ""
@@ -637,18 +648,8 @@ class ClerkProvider(ClerkBase):
     waitlist_url: str = ""
     """The full URL or path to the waitlist page."""
 
-    def add_imports(self) -> rx.ImportDict:
-        # Import ui package to pin Clerk component versions when using structural CSS.
-        return {get_clerk_ui_library(): ["ui"]}
-
     @classmethod
     def create(cls, *children, **props) -> Self:
-        # Default to ui={ui} unless caller explicitly supplies a different ui config.
-        if "ui" not in props:
-            props["ui"] = Var(_js_expr="ui", _var_type=Any)
-        props.setdefault(
-            "clerk_js_version", get_clerk_frontend_versions().clerk_js_version
-        )
         return cast(Self, super().create(*children, **props))
 
     def add_custom_code(self) -> list[str]:

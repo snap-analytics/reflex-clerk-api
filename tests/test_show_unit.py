@@ -1,3 +1,5 @@
+from reflex_clerk_api.base import CLERK_REACT_VERSION
+from reflex_clerk_api.clerk_provider import ClerkProvider
 from reflex_clerk_api.control_components import Show
 
 
@@ -45,3 +47,11 @@ def test_show_create_with_treat_pending_as_signed_out():
 
     props = _render_props(component)
     assert "treatPendingAsSignedOut:true" in props
+
+
+def test_show_uses_exact_clerk_library_version():
+    assert Show.library == f"@clerk/react@{CLERK_REACT_VERSION}"
+
+
+def test_clerk_provider_uses_exact_clerk_library_version():
+    assert ClerkProvider.library == f"@clerk/react@{CLERK_REACT_VERSION}"

@@ -148,6 +148,9 @@ def _sync_clerk_component_class(component_cls: type[rx.Component]) -> None:
     if "clerk_js_version" in fields:
         setattr(component_cls, "clerk_js_version", versions.clerk_js_version)
         fields["clerk_js_version"].default = versions.clerk_js_version
+    if "clerk_ui_version" in fields:
+        setattr(component_cls, "clerk_ui_version", versions.ui_version)
+        fields["clerk_ui_version"].default = versions.ui_version
 
 
 def _iter_clerk_component_classes() -> Iterator[type[rx.Component]]:

@@ -14,7 +14,12 @@ from reflex.event import EventCallback, EventType, IndividualEventType
 from reflex.utils.exceptions import ImmutableStateError
 from reflex.vars.base import Var
 
-from reflex_clerk_api.base import ClerkBase
+from reflex_clerk_api.base import (
+    ClerkBase,
+    get_clerk_frontend_versions,
+    get_clerk_react_library,
+    get_clerk_ui_library,
+)
 
 from .models import Appearance
 
@@ -420,7 +425,7 @@ class ClerkSessionSynchronizer(rx.Component):
         self,
     ) -> rx.ImportDict:
         addl_imports: rx.ImportDict = {
-            "@clerk/react": ["useAuth"],
+            get_clerk_react_library(): ["useAuth"],
             "react": ["useContext", "useEffect", "useRef"],
             "$/utils/context": ["EventLoopContext"],
             "$/utils/state": ["ReflexEvent"],
@@ -552,7 +557,7 @@ class ClerkProvider(ClerkBase):
     clerk_js_variant: str | None = None
     """If your web application only uses control components, set this to 'headless'."""
 
-    clerk_js_version: str = ""
+    clerk_js_version: str = get_clerk_frontend_versions().clerk_js_version
     """Define the npm version for @clerk/clerk-js."""
 
     # domain: str | JSCallable[[str], bool] = ""
@@ -634,13 +639,16 @@ class ClerkProvider(ClerkBase):
 
     def add_imports(self) -> rx.ImportDict:
         # Import ui package to pin Clerk component versions when using structural CSS.
-        return {"@clerk/ui": ["ui"]}
+        return {get_clerk_ui_library(): ["ui"]}
 
     @classmethod
     def create(cls, *children, **props) -> Self:
         # Default to ui={ui} unless caller explicitly supplies a different ui config.
         if "ui" not in props:
             props["ui"] = Var(_js_expr="ui", _var_type=Any)
+        props.setdefault(
+            "clerk_js_version", get_clerk_frontend_versions().clerk_js_version
+        )
         return cast(Self, super().create(*children, **props))
 
     def add_custom_code(self) -> list[str]:

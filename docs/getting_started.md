@@ -101,6 +101,28 @@ clerk.wrap_app(app, publishable_key=...)
 
 Taking the same arguments as `clerk.clerk_provider`.
 
+### Frontend Package Versions
+
+`reflex-clerk-api` pins a compatible Clerk frontend set by default:
+
+- `@clerk/react@6.6.0`
+- `@clerk/ui@1.9.0`
+- ClerkJS `6.10.0`
+
+If your app needs a different compatible set, configure it before creating Clerk components or importing page modules that create them:
+
+```python
+import reflex_clerk_api as clerk
+
+clerk.configure_clerk_frontend_versions(
+    react_version="6.6.0",
+    ui_version="1.9.0",
+    clerk_js_version="6.10.0",
+)
+```
+
+The configuration updates both `ClerkBase.library` and Reflex's stored component field defaults, so `clerk_provider(...)`, `wrap_app(...)`, and direct `ClerkProvider.create(...)` calls use the same version set.
+
 ### Environment Variables
 
 A good way to provide the keys is via environment variables (to avoid accidentally sharing them). You can do this by creating a `.env` file in the root of your project with:

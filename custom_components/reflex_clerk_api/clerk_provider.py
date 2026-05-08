@@ -437,7 +437,7 @@ class ClerkSessionSynchronizer(rx.Component):
         return [
             """
 function ClerkSessionSynchronizer({{ children }}) {{
-  const {{ getToken, isLoaded, isSignedIn }} = useAuth()
+  const {{ getToken, isLoaded, isSignedIn, orgId, sessionId, userId }} = useAuth()
   const [ addEvents ] = useContext(EventLoopContext)
   const lastSentRef = useRef({{ stateKey: null, addEvents: null }})
 
@@ -454,9 +454,10 @@ function ClerkSessionSynchronizer({{ children }}) {{
       // Wait for all dependencies to be ready.
       if (!isLoaded || !addEvents) return
 
-      // Deduplicate rapid calls, but remain reconnect-safe:
+      // Deduplicate rapid calls, but keep org/user/session switches visible to the backend.
       // addEvents identity changes across websocket reconnects, so include it in the key.
-      const stateKey = isSignedIn ? "signed_in" : "signed_out"
+      const signedInStateKey = ["signed_in", userId || "", orgId || "", sessionId || ""].join(":")
+      const stateKey = isSignedIn ? signedInStateKey : "signed_out"
       if (
         lastSentRef.current?.stateKey === stateKey &&
         lastSentRef.current?.addEvents === addEvents
@@ -489,7 +490,7 @@ function ClerkSessionSynchronizer({{ children }}) {{
       }} else {{
         addEvents([ReflexEvent("{state}.clear_clerk_session")])
       }}
-  }}, [isLoaded, isSignedIn, addEvents, getToken])
+  }}, [isLoaded, isSignedIn, userId, orgId, sessionId, addEvents, getToken])
 
   return (
       <>{{children}}</>

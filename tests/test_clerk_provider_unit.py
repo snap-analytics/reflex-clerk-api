@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 
 import authlib.jose.errors as jose_errors
 import reflex as rx
@@ -60,6 +61,136 @@ def test_clerk_session_synchronizer_js_contains_reconnect_safe_deps_and_skipcach
     assert "[isLoaded, isSignedIn, userId, orgId, sessionId, addEvents, getToken]" in js
     assert "skipCache: true" in js
     assert "isJwtExpired(token)" in js
+    assert "setTimeout" in js
+    assert "release_pending_auth_on_loads" in js
+    assert "clear_clerk_session" in js
+    assert "Promise.race([tokenRequest, tokenTimeout])" in js
+    assert "scheduleTokenRetry()" in js
+
+
+def test_clerk_session_synchronizer_js_uses_configured_auth_fallback_timeout():
+    """The frontend fallback timeout should use ClerkState configuration."""
+    from reflex_clerk_api.clerk_provider import ClerkSessionSynchronizer, ClerkState
+
+    original_timeout = ClerkState._auth_wait_timeout_seconds
+    try:
+        ClerkState.set_auth_wait_timeout_seconds(2.5)
+        js = ClerkSessionSynchronizer.create().add_custom_code()[0]
+    finally:
+        ClerkState.set_auth_wait_timeout_seconds(original_timeout)
+
+    assert "}, 2500)" in js
+
+
+def test_wait_for_auth_check_queues_and_set_clerk_session_flushes(monkeypatch):
+    """Auth-gated on_loads should flush when the Clerk session sync succeeds."""
+    import importlib
+
+    clerk_provider_module = importlib.import_module("reflex_clerk_api.clerk_provider")
+    from reflex_clerk_api.clerk_provider import ClerkState
+
+    state = ClerkState(_reflex_internal_init=True)
+    uid = uuid.uuid4()
+    on_load_event = rx.noop()
+    ClerkState._on_load_events = {uid: [on_load_event]}
+
+    async def fake_get_jwk_keys(self):
+        return {}
+
+    class FakeClaims(dict):
+        def validate(self, leeway=None):
+            return None
+
+    monkeypatch.setattr(ClerkState, "_get_jwk_keys", fake_get_jwk_keys, raising=True)
+    monkeypatch.setattr(
+        clerk_provider_module.jwt,
+        "decode",
+        lambda *args, **kwargs: FakeClaims(sub="user_123"),
+        raising=True,
+    )
+
+    queued = asyncio.run(ClerkState.wait_for_auth_check.fn(state, uid=uid))
+    assert queued == []
+    assert state._pending_auth_on_load_event_ids == [str(uid)]
+
+    flushed = asyncio.run(ClerkState.set_clerk_session.fn(state, token="fake"))
+    assert flushed == [on_load_event]
+    assert state.auth_checked is True
+    assert state.is_signed_in is True
+    assert state.user_id == "user_123"
+    assert state._pending_auth_on_load_event_ids == []
+    assert ClerkState._on_load_events[uid] == [on_load_event]
+
+    next_state = ClerkState(_reflex_internal_init=True)
+    next_state.auth_checked = True
+    repeat = asyncio.run(ClerkState.wait_for_auth_check.fn(next_state, uid=uid))
+    assert repeat == [on_load_event]
+
+
+def test_wait_for_auth_check_queues_and_timeout_releases_without_state_change():
+    """Frontend auth timeout should not be treated as an auth result."""
+    from reflex_clerk_api.clerk_provider import ClerkState
+
+    state = ClerkState(_reflex_internal_init=True)
+    state.is_signed_in = True
+    state.user_id = "user_existing"
+    uid = uuid.uuid4()
+    on_load_event = rx.noop()
+    ClerkState._on_load_events = {uid: [on_load_event]}
+
+    queued = asyncio.run(ClerkState.wait_for_auth_check.fn(state, uid=uid))
+    assert queued == []
+
+    flushed = ClerkState.release_pending_auth_on_loads.fn(state)
+    assert flushed == [on_load_event]
+    assert state.auth_checked is False
+    assert state.is_signed_in is True
+    assert state.user_id == "user_existing"
+    assert state._pending_auth_on_load_event_ids == []
+    assert ClerkState._on_load_events[uid] == [on_load_event]
+
+
+def test_auth_timeout_before_queue_does_not_strand_on_load():
+    """If timeout arrives before wait_for_auth_check, on_load still runs."""
+    from reflex_clerk_api.clerk_provider import ClerkState
+
+    state = ClerkState(_reflex_internal_init=True)
+    uid = uuid.uuid4()
+    on_load_event = rx.noop()
+    ClerkState._on_load_events = {uid: [on_load_event]}
+
+    released = ClerkState.release_pending_auth_on_loads.fn(state)
+    assert released == []
+    assert state.auth_checked is False
+    assert state._auth_on_loads_released is True
+
+    on_loads = asyncio.run(ClerkState.wait_for_auth_check.fn(state, uid=uid))
+    assert on_loads == [on_load_event]
+    assert state._pending_auth_on_load_event_ids == []
+    assert ClerkState._on_load_events[uid] == [on_load_event]
+
+
+def test_wait_for_auth_check_queues_and_clear_clerk_session_flushes(monkeypatch):
+    """An explicit signed-out sync should flush queued on_loads as signed-out."""
+    from reflex_clerk_api.clerk_provider import ClerkState
+
+    state = ClerkState(_reflex_internal_init=True)
+    uid = uuid.uuid4()
+    on_load_event = rx.noop()
+    ClerkState._on_load_events = {uid: [on_load_event]}
+
+    queued = asyncio.run(ClerkState.wait_for_auth_check.fn(state, uid=uid))
+    assert queued == []
+
+    # Bare ClerkState instances do not have a parent root state in unit tests,
+    # so bypass Reflex's full-tree reset and isolate this handler's behavior.
+    monkeypatch.setattr(ClerkState, "reset", lambda self: None, raising=True)
+    flushed = ClerkState.clear_clerk_session.fn(state)
+    assert flushed == [on_load_event]
+    assert state.auth_checked is True
+    assert state.is_signed_in is False
+    assert state._pending_auth_on_load_event_ids == []
+    assert ClerkState._on_load_events[uid] == [on_load_event]
 
 
 def test_clerk_session_synchronizer_imports_pinned_clerk_react():

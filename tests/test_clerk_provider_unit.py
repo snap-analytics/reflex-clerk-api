@@ -2,6 +2,7 @@ import asyncio
 import uuid
 
 import authlib.jose.errors as jose_errors
+import pytest
 import reflex as rx
 from reflex.utils.imports import ImportVar
 
@@ -66,6 +67,11 @@ def test_clerk_session_synchronizer_js_contains_reconnect_safe_deps_and_skipcach
     assert "clear_clerk_session" in js
     assert "Promise.race([tokenRequest, tokenTimeout])" in js
     assert "scheduleTokenRetry()" in js
+    expired_token_start = js.index("if (isJwtExpired(token))")
+    expired_token_branch = js[
+        expired_token_start : js.index("clear_clerk_session", expired_token_start)
+    ]
+    assert "lastSentRef.current" not in expired_token_branch
 
 
 def test_clerk_session_synchronizer_js_uses_configured_auth_fallback_timeout():
@@ -80,6 +86,20 @@ def test_clerk_session_synchronizer_js_uses_configured_auth_fallback_timeout():
         ClerkState.set_auth_wait_timeout_seconds(original_timeout)
 
     assert "}, 2500)" in js
+
+
+def test_set_auth_wait_timeout_seconds_requires_positive_value():
+    """Zero would create immediate frontend timeout/retry loops."""
+    from reflex_clerk_api.clerk_provider import ClerkState
+
+    original_timeout = ClerkState._auth_wait_timeout_seconds
+    try:
+        with pytest.raises(ValueError, match="auth wait timeout must be positive"):
+            ClerkState.set_auth_wait_timeout_seconds(0)
+        with pytest.raises(ValueError, match="auth wait timeout must be positive"):
+            ClerkState.set_auth_wait_timeout_seconds(-0.1)
+    finally:
+        ClerkState.set_auth_wait_timeout_seconds(original_timeout)
 
 
 def test_wait_for_auth_check_queues_and_set_clerk_session_flushes(monkeypatch):

@@ -90,10 +90,10 @@ class ClerkState(rx.State):
         Auth-gated on_load events are normally flushed by the frontend Clerk sync
         event. If Clerk never reports loaded or token retrieval stalls, the
         frontend releases queued on_load events after this timeout without
-        changing the current auth state.
+        changing the current auth state. The timeout must be positive.
         """
-        if seconds < 0:
-            raise ValueError("auth wait timeout must be non-negative")
+        if seconds <= 0:
+            raise ValueError("auth wait timeout must be positive")
         cls._auth_wait_timeout_seconds = seconds
 
     @classmethod
@@ -607,7 +607,6 @@ function ClerkSessionSynchronizer({{ children }}) {{
               if (isJwtExpired(token)) {{
                 // Avoid sending already-expired JWTs to the backend, which would otherwise leave
                 // auth waiters racing a validation failure.
-                lastSentRef.current = {{ stateKey, addEvents }}
                 addEvents([ReflexEvent("{state}.clear_clerk_session")])
                 return
               }}

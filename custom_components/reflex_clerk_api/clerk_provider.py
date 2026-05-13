@@ -138,6 +138,14 @@ class ClerkState(rx.State):
         if event_id not in pending_ids:
             pending_ids.append(event_id)
         overflow_count = max(0, len(pending_ids) - self._max_pending_auth_on_load_events)
+        if overflow_count > 0:
+            logging.warning(
+                "Dropping %s oldest pending auth on_load event(s) due to queue "
+                "overflow; max pending events=%s, dropped event ids=%s",
+                overflow_count,
+                self._max_pending_auth_on_load_events,
+                pending_ids[:overflow_count],
+            )
         self._pending_auth_on_load_event_ids = pending_ids[overflow_count:]
 
     @classmethod

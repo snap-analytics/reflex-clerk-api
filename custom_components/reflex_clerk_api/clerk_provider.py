@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 import time
@@ -43,6 +42,11 @@ class ClerkState(rx.State):
     """Whether the auth state of the user has been checked yet.
     I.e., has Clerk sent a response to the frontend yet."""
 
+    _pending_auth_on_load_event_ids: list[str] = []
+    """Page on_load event IDs waiting for the frontend Clerk auth check."""
+    _auth_on_loads_released: bool = False
+    """Whether pending auth-gated on_load events were released by timeout."""
+
     claims: JWTClaims | None = None
     """The JWT claims of the user, if they are logged in."""
     user_id: str | None = None
@@ -50,6 +54,7 @@ class ClerkState(rx.State):
 
     # NOTE: ClassVar tells reflex it doesn't need to include these in the persisted state per instance.
     _auth_wait_timeout_seconds: ClassVar[float] = 1.0
+    _max_pending_auth_on_load_events: ClassVar[int] = 50
     _secret_key: ClassVar[str | None] = None
     """The Clerk secret_key set during clerk_provider creation."""
     _on_load_events: ClassVar[dict[uuid.UUID, EventType[()]]] = {}
@@ -80,12 +85,68 @@ class ClerkState(rx.State):
 
     @classmethod
     def set_auth_wait_timeout_seconds(cls, seconds: float) -> None:
-        """Sets the max time to wait for initial auth check before running other on_load events.
+        """Set the frontend auth fallback timeout value.
 
-        Note: on_load events will still be run after a timed out auth check.
-        Check ClerkState.auth_checked to see if auth check is complete.
+        Auth-gated on_load events are normally flushed by the frontend Clerk sync
+        event. If Clerk never reports loaded or token retrieval stalls, the
+        frontend releases queued on_load events after this timeout without
+        changing the current auth state. The timeout must be positive.
         """
+        if seconds <= 0:
+            raise ValueError("auth wait timeout must be positive")
         cls._auth_wait_timeout_seconds = seconds
+
+    @classmethod
+    def set_max_pending_auth_on_load_events(cls, max_events: int) -> None:
+        """Set the maximum number of auth-gated page on_loads pending per state."""
+        if max_events < 1:
+            raise ValueError("max pending auth on_load events must be at least 1")
+        cls._max_pending_auth_on_load_events = max_events
+
+    def _take_pending_auth_on_load_event_ids(self) -> list[str]:
+        pending_on_load_event_ids = list(
+            dict.fromkeys(self._pending_auth_on_load_event_ids)
+        )
+        self._pending_auth_on_load_event_ids = []
+        return pending_on_load_event_ids
+
+    @classmethod
+    def _get_on_load_events_for_id(cls, uid: uuid.UUID) -> list[IndividualEventType[()]]:
+        on_loads = cls._on_load_events.get(uid, None)
+        if on_loads is None:
+            logging.warning("Waited for auth, but no on_load events registered.")
+            return []
+        return list(on_loads)
+
+    @classmethod
+    def _get_on_load_events_for_ids(
+        cls, event_ids: list[str]
+    ) -> list[IndividualEventType[()]]:
+        on_loads: list[IndividualEventType[()]] = []
+        for event_id in dict.fromkeys(event_ids):
+            try:
+                uid = uuid.UUID(event_id)
+            except ValueError:
+                logging.warning("Ignoring invalid pending auth on_load event id.")
+                continue
+            on_loads.extend(cls._get_on_load_events_for_id(uid))
+        return on_loads
+
+    def _queue_pending_auth_on_load_event_id(self, uid: uuid.UUID) -> None:
+        event_id = str(uid)
+        pending_ids = list(dict.fromkeys(self._pending_auth_on_load_event_ids))
+        if event_id not in pending_ids:
+            pending_ids.append(event_id)
+        overflow_count = max(0, len(pending_ids) - self._max_pending_auth_on_load_events)
+        if overflow_count > 0:
+            logging.warning(
+                "Dropping %s oldest pending auth on_load event(s) due to queue "
+                "overflow; max pending events=%s, dropped event ids=%s",
+                overflow_count,
+                self._max_pending_auth_on_load_events,
+                pending_ids[:overflow_count],
+            )
+        self._pending_auth_on_load_event_ids = pending_ids[overflow_count:]
 
     @classmethod
     def set_claims_options(cls, claims_options: dict[str, Any]) -> None:
@@ -163,14 +224,22 @@ class ClerkState(rx.State):
                 self.claims = None
                 self.user_id = None
                 self.auth_checked = True
-            return list(self._dependent_handlers.values())
+                self._auth_on_loads_released = False
+                pending_on_load_event_ids = self._take_pending_auth_on_load_event_ids()
+            pending_on_loads = self._get_on_load_events_for_ids(
+                pending_on_load_event_ids
+            )
+            return list(self._dependent_handlers.values()) + pending_on_loads
 
         async with self:
             self.is_signed_in = True
             self.claims = decoded
             self.user_id = str(decoded.get("sub"))
             self.auth_checked = True
-        return list(self._dependent_handlers.values())
+            self._auth_on_loads_released = False
+            pending_on_load_event_ids = self._take_pending_auth_on_load_event_ids()
+        pending_on_loads = self._get_on_load_events_for_ids(pending_on_load_event_ids)
+        return list(self._dependent_handlers.values()) + pending_on_loads
 
     @rx.event
     def clear_clerk_session(self) -> EventType:
@@ -179,38 +248,56 @@ class ClerkState(rx.State):
         This event is triggered by the frontend via the ClerkSessionSynchronizer/ClerkProvider component.
         """
         logging.debug("Clearing Clerk session")
+        pending_on_load_event_ids = self._take_pending_auth_on_load_event_ids()
         self.reset()
         self.auth_checked = True
-        return list(self._dependent_handlers.values())
+        self._auth_on_loads_released = False
+        pending_on_loads = self._get_on_load_events_for_ids(pending_on_load_event_ids)
+        return list(self._dependent_handlers.values()) + pending_on_loads
+
+    @rx.event
+    def release_pending_auth_on_loads(self) -> EventType:
+        """Release auth-gated page loads without changing auth state.
+
+        This preserves the previous timeout behavior of clerk.on_load: page load
+        handlers can still run after the configured timeout, but auth_checked
+        remains false until Clerk actually syncs.
+        """
+        logging.warning("Clerk auth sync timed out; releasing pending on_load events")
+        if self.auth_checked:
+            return []
+        self._auth_on_loads_released = True
+        pending_on_load_event_ids = self._take_pending_auth_on_load_event_ids()
+        pending_on_loads = self._get_on_load_events_for_ids(pending_on_load_event_ids)
+        return pending_on_loads
 
     @rx.event(background=True)
-    async def wait_for_auth_check(self, uid: uuid.UUID | str) -> EventType:
-        """Wait for the Clerk authentication to complete (event sent from frontend).
+    async def wait_for_auth_check(
+        self, uid: uuid.UUID | str
+    ) -> EventType:
+        """Run page on_load events once Clerk authentication has been checked.
 
-        Can't just use a blocking wait_for_auth_check because we are really waiting for the frontend event trigger to run, so we need to not block that while we wait.
-
-        This can then return on_load events once auth_checked is True.
+        If the frontend auth event has not reached the backend yet, queue this
+        page on_load ID on the state instance. The Clerk sync event will flush it.
         """
         uid = uuid.UUID(uid) if isinstance(uid, str) else uid
         logging.debug(f"Waiting for auth check: {uid} ({type(uid)})")
 
-        on_loads = self._on_load_events.get(uid, None)
-        if on_loads is None:
-            logging.warning("Waited for auth, but no on_load events registered.")
-            on_loads = []
+        on_loads = self._get_on_load_events_for_id(uid)
+        if not on_loads:
+            return []
 
-        deadline = time.monotonic() + ClerkState._auth_wait_timeout_seconds
-        while time.monotonic() < deadline:
-            async with self:
-                auth_checked = self.auth_checked
-            if auth_checked:
-                logging.debug("Auth check complete")
-                return on_loads
-            logging.debug("...waiting for auth...")
-            # TODO: Ideally, wait on some event instead of sleeping
-            await asyncio.sleep(0.05)
-        logging.warning("Auth check timed out")
-        return on_loads
+        async with self:
+            auth_checked = self.auth_checked
+            auth_on_loads_released = self._auth_on_loads_released
+            already_pending = str(uid) in self._pending_auth_on_load_event_ids
+            if not auth_checked and not auth_on_loads_released and not already_pending:
+                self._queue_pending_auth_on_load_event_id(uid)
+
+        if auth_checked or auth_on_loads_released:
+            logging.debug("Auth check complete")
+            return self._get_on_load_events_for_id(uid)
+        return []
 
     @classmethod
     def _set_secret_key(cls, secret_key: str) -> None:
@@ -433,6 +520,7 @@ class ClerkSessionSynchronizer(rx.Component):
 
     def add_custom_code(self) -> list[str]:
         clerk_state_name = ClerkState.get_full_name()
+        auth_timeout_ms = max(0, int(ClerkState._auth_wait_timeout_seconds * 1000))
 
         return [
             """
@@ -440,6 +528,7 @@ function ClerkSessionSynchronizer({{ children }}) {{
   const {{ getToken, isLoaded, isSignedIn, orgId, sessionId, userId }} = useAuth()
   const [ addEvents ] = useContext(EventLoopContext)
   const lastSentRef = useRef({{ stateKey: null, addEvents: null }})
+  const authFallbackTimerRef = useRef(null)
 
   const isJwtExpired = (token) => {{
     try {{
@@ -449,6 +538,29 @@ function ClerkSessionSynchronizer({{ children }}) {{
       return false
     }}
   }}
+
+  useEffect(() => {{
+      if (!addEvents) return
+      if (authFallbackTimerRef.current !== null) {{
+        clearTimeout(authFallbackTimerRef.current)
+        authFallbackTimerRef.current = null
+      }}
+      if (isLoaded) {{
+        return
+      }}
+      authFallbackTimerRef.current = setTimeout(() => {{
+        authFallbackTimerRef.current = null
+        // Fallback only if Clerk never reports loaded. This preserves the old
+        // timeout behavior without treating a slow Clerk load as logout.
+        addEvents([ReflexEvent("{state}.release_pending_auth_on_loads")])
+      }}, {auth_timeout_ms})
+      return () => {{
+        if (authFallbackTimerRef.current !== null) {{
+          clearTimeout(authFallbackTimerRef.current)
+          authFallbackTimerRef.current = null
+        }}
+      }}
+  }}, [isLoaded, addEvents])
 
   useEffect(() => {{
       // Wait for all dependencies to be ready.
@@ -461,16 +573,36 @@ function ClerkSessionSynchronizer({{ children }}) {{
       if (
         lastSentRef.current?.stateKey === stateKey &&
         lastSentRef.current?.addEvents === addEvents
-      ) return
-      lastSentRef.current = {{ stateKey, addEvents }}
-
-      if (isSignedIn) {{
-        // Prefer a fresh token; cached tokens can be close to expiry.
-        // If this Clerk version doesn't support skipCache, fall back to the default call.
-        Promise.resolve()
+      ) {{
+        return
+      }}
+      let cancelled = false
+      let tokenRetryTimer = null
+      let pendingOnLoadsReleased = false
+      const releasePendingOnLoads = () => {{
+        if (cancelled || pendingOnLoadsReleased) return
+        pendingOnLoadsReleased = true
+        addEvents([ReflexEvent("{state}.release_pending_auth_on_loads")])
+      }}
+      const scheduleTokenRetry = () => {{
+        if (cancelled || tokenRetryTimer !== null) return
+        tokenRetryTimer = setTimeout(() => {{
+          tokenRetryTimer = null
+          requestToken()
+        }}, {auth_timeout_ms})
+      }}
+      const requestToken = () => {{
+        const tokenRequest = Promise.resolve()
           .then(() => getToken({{ skipCache: true }}))
           .catch(() => getToken())
+        const tokenTimeout = new Promise(resolve => {{
+          setTimeout(() => resolve(null), {auth_timeout_ms})
+        }})
+        // Prefer a fresh token; cached tokens can be close to expiry.
+        // If this Clerk version doesn't support skipCache, fall back to the default call.
+        Promise.race([tokenRequest, tokenTimeout])
           .then(token => {{
+            if (cancelled) return
             if (token) {{
               if (isJwtExpired(token)) {{
                 // Avoid sending already-expired JWTs to the backend, which would otherwise leave
@@ -478,16 +610,34 @@ function ClerkSessionSynchronizer({{ children }}) {{
                 addEvents([ReflexEvent("{state}.clear_clerk_session")])
                 return
               }}
+              lastSentRef.current = {{ stateKey, addEvents }}
               addEvents([ReflexEvent("{state}.set_clerk_session", {{token}})])
             }} else {{
-              // Token unavailable despite isSignedIn - clear to avoid stuck auth state.
-              addEvents([ReflexEvent("{state}.clear_clerk_session")])
+              // Token unavailable despite isSignedIn. Release on_loads after the
+              // timeout path, but keep retrying instead of treating it as logout.
+              releasePendingOnLoads()
+              scheduleTokenRetry()
             }}
           }}).catch(() => {{
-            // Token retrieval failed - clear to avoid stuck auth state.
-            addEvents([ReflexEvent("{state}.clear_clerk_session")])
+            if (cancelled) return
+            // Token retrieval failed. Keep Clerk authoritative; a later successful
+            // sync or explicit signed-out state will reconcile.
+            releasePendingOnLoads()
+            scheduleTokenRetry()
           }})
+      }}
+
+      if (isSignedIn) {{
+        requestToken()
+        return () => {{
+          cancelled = true
+          if (tokenRetryTimer !== null) {{
+            clearTimeout(tokenRetryTimer)
+            tokenRetryTimer = null
+          }}
+        }}
       }} else {{
+        lastSentRef.current = {{ stateKey, addEvents }}
         addEvents([ReflexEvent("{state}.clear_clerk_session")])
       }}
   }}, [isLoaded, isSignedIn, userId, orgId, sessionId, addEvents, getToken])
@@ -496,7 +646,7 @@ function ClerkSessionSynchronizer({{ children }}) {{
       <>{{children}}</>
   )
 }}
-""".format(state=clerk_state_name)
+""".format(state=clerk_state_name, auth_timeout_ms=auth_timeout_ms)
         ]
 
 

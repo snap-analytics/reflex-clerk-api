@@ -105,9 +105,9 @@ Taking the same arguments as `clerk.clerk_provider`.
 
 `reflex-clerk-api` pins a compatible Clerk frontend set by default:
 
-- `@clerk/react@6.6.0`
-- `@clerk/ui@1.9.0`
-- ClerkJS `6.10.0`
+- `@clerk/react@6.12.0`
+- `@clerk/ui@1.25.0`
+- ClerkJS `6.25.0`
 
 If your app needs a different compatible set, configure it before creating Clerk components or importing page modules that create them:
 
@@ -115,9 +115,9 @@ If your app needs a different compatible set, configure it before creating Clerk
 import reflex_clerk_api as clerk
 
 clerk.configure_clerk_frontend_versions(
-    react_version="6.6.0",
-    ui_version="1.9.0",
-    clerk_js_version="6.10.0",
+    react_version="6.12.0",
+    ui_version="1.25.0",
+    clerk_js_version="6.25.0",
 )
 ```
 

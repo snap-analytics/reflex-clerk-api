@@ -49,7 +49,7 @@ def index() -> rx.Component:
     )
 ```
 
-The package pins a compatible Clerk frontend set by default (`@clerk/react@6.6.0`, `@clerk/ui@1.9.0`, ClerkJS `6.10.0`). Apps that need another compatible set can call `clerk.configure_clerk_frontend_versions(...)` before creating Clerk components.
+The package pins a compatible Clerk frontend set by default (`@clerk/react@6.12.0`, `@clerk/ui@1.25.0`, ClerkJS `6.25.0`). Apps that need another compatible set can call `clerk.configure_clerk_frontend_versions(...)` before creating Clerk components.
 
 ## Contributing
 

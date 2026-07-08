@@ -47,12 +47,12 @@ class ClerkFrontendVersions:
 
 
 DEFAULT_CLERK_FRONTEND_VERSIONS = ClerkFrontendVersions(
-    react_version="6.6.0",
-    ui_version="1.9.0",
-    clerk_js_version="6.10.0",
-    shared_version="4.10.1",
-    localizations_version="4.6.1",
-    tanstack_query_core_version="5.100.9",
+    react_version="6.12.0",
+    ui_version="1.25.0",
+    clerk_js_version="6.25.0",
+    shared_version="4.25.0",
+    localizations_version="4.13.0",
+    tanstack_query_core_version="5.101.2",
 )
 
 CLERK_REACT_VERSION = DEFAULT_CLERK_FRONTEND_VERSIONS.react_version

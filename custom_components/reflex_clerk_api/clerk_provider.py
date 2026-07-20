@@ -19,7 +19,7 @@ from reflex_clerk_api.base import (
     get_clerk_ui_library,
 )
 
-from .models import Appearance
+from .models import Appearance, Localization
 
 
 class ReflexClerkApiError(Exception):
@@ -111,7 +111,9 @@ class ClerkState(rx.State):
         return pending_on_load_event_ids
 
     @classmethod
-    def _get_on_load_events_for_id(cls, uid: uuid.UUID) -> list[IndividualEventType[()]]:
+    def _get_on_load_events_for_id(
+        cls, uid: uuid.UUID
+    ) -> list[IndividualEventType[()]]:
         on_loads = cls._on_load_events.get(uid, None)
         if on_loads is None:
             logging.warning("Waited for auth, but no on_load events registered.")
@@ -137,7 +139,9 @@ class ClerkState(rx.State):
         pending_ids = list(dict.fromkeys(self._pending_auth_on_load_event_ids))
         if event_id not in pending_ids:
             pending_ids.append(event_id)
-        overflow_count = max(0, len(pending_ids) - self._max_pending_auth_on_load_events)
+        overflow_count = max(
+            0, len(pending_ids) - self._max_pending_auth_on_load_events
+        )
         if overflow_count > 0:
             logging.warning(
                 "Dropping %s oldest pending auth on_load event(s) due to queue "
@@ -272,9 +276,7 @@ class ClerkState(rx.State):
         return pending_on_loads
 
     @rx.event(background=True)
-    async def wait_for_auth_check(
-        self, uid: uuid.UUID | str
-    ) -> EventType:
+    async def wait_for_auth_check(self, uid: uuid.UUID | str) -> EventType:
         """Run page on_load events once Clerk authentication has been checked.
 
         If the frontend auth event has not reached the backend yet, queue this
@@ -738,10 +740,8 @@ class ClerkProvider(ClerkBase):
     is_satellite: bool = False
     """Whether the application is a satellite application."""
 
-    # Not implemented
-    # localization: Localization | None = None
-    # See https://clerk.com/docs/customization/localization#clerk-localizations for more info.
-    # """Optional object to localize your components. Will only affect Clerk components."""
+    localization: Localization | None = None
+    """Optional localization overrides for Clerk components."""
 
     nonce: str = ""
     """Nonce value passed to the @clerk/clerk-js script tag for CSP implementation."""
@@ -978,6 +978,7 @@ def clerk_provider(
     secret_key: str | None = None,
     register_user_state: bool = False,
     appearance: Appearance | None = None,
+    localization: Localization | None = None,
     **props,
 ) -> rx.Component:
     """
@@ -991,6 +992,7 @@ def clerk_provider(
         secret_key: Your Clerk app's Secret Key, which you can find in the Clerk Dashboard. It will be prefixed with sk_test_ in development instances and sk_live_ in production instances. Do not expose this on the frontend with a public environment variable.
         register_user_state: Whether to register the ClerkUser state to automatically load user information on login.
         appearance: Optional object to style your components. Will only affect Clerk components.
+        localization: Optional localization overrides for Clerk components.
     """
     if secret_key:
         ClerkState._set_secret_key(secret_key)
@@ -1002,6 +1004,7 @@ def clerk_provider(
         ClerkSessionSynchronizer.create(*children),
         publishable_key=publishable_key,
         appearance=appearance,
+        localization=localization,
         **props,
     )
 
@@ -1012,6 +1015,7 @@ def wrap_app(
     secret_key: str | None = None,
     register_user_state: bool = False,
     appearance: Appearance | None = None,
+    localization: Localization | None = None,
     **props,
 ) -> rx.App:
     """Wraps the entire app with the ClerkProvider.
@@ -1024,6 +1028,8 @@ def wrap_app(
         publishable_key: The Clerk Publishable Key for your instance.
         secret_key: Your Clerk app's Secret Key. (not needed for frontend only)
         register_user_state: Whether to register the ClerkUser state to automatically load user information on login.
+        appearance: Optional object to style your components. Will only affect Clerk components.
+        localization: Optional localization overrides for Clerk components.
     """
     # 1 makes this the first wrapper around the content
     #  (0 would place it after, 100 would also wrap default reflex wrappers)
@@ -1032,6 +1038,7 @@ def wrap_app(
         secret_key=secret_key,
         register_user_state=register_user_state,
         appearance=appearance,
+        localization=localization,
         **props,
     )
     return app

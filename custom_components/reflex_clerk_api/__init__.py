@@ -31,6 +31,7 @@ from .control_components import (
     redirect_to_user_profile,
     show,
 )
+from .models import Localization
 from .organization_components import (
     create_organization,
     organization_list,
@@ -56,6 +57,7 @@ __all__ = [
     "ClerkFrontendVersions",
     "ClerkState",
     "ClerkUser",
+    "Localization",
     "SignInButton",
     "add_sign_in_page",
     "add_sign_up_page",

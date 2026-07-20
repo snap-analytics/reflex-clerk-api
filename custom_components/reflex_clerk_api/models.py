@@ -3,6 +3,7 @@ from typing import Any, Literal
 from reflex.components.props import PropsBase
 
 LiteralBaseTheme = Literal["default", "dark", "neobrutalism", "shadesOfPurple"]
+Localization = dict[str, Any]
 
 
 class Layout(PropsBase):

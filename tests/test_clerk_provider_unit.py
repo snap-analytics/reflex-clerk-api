@@ -264,7 +264,7 @@ def test_clerk_provider_allows_ui_override():
     assert 'ui:"custom-ui"' in props
 
 
-def test_clerk_provider_preserves_localization_error_keys():
+def test_clerk_provider_preserves_localization_error_keys() -> None:
     from reflex_clerk_api.clerk_provider import ClerkProvider
 
     props = ClerkProvider.create(
@@ -275,10 +275,10 @@ def test_clerk_provider_preserves_localization_error_keys():
         }
     ).render()["props"]
 
-    assert (
-        'localization:({ ["unstable__errors"] : ({ ["too_many_requests"] : '
-        '"Too many sign-in attempts. Try again shortly." }) })' in props
-    )
+    localization_prop = next(prop for prop in props if prop.startswith("localization:"))
+    assert '["unstable__errors"]' in localization_prop
+    assert '["too_many_requests"]' in localization_prop
+    assert '"Too many sign-in attempts. Try again shortly."' in localization_prop
 
 
 def test_clerk_provider_defaults_clerk_js_version():
@@ -345,7 +345,7 @@ def test_wrap_app_allows_clerk_frontend_version_overrides():
     assert '__internal_clerkUIVersion:"1.99.0"' in props
 
 
-def test_wrap_app_passes_localization_to_clerk_provider():
+def test_wrap_app_passes_localization_to_clerk_provider() -> None:
     from reflex_clerk_api.clerk_provider import wrap_app
 
     app = rx.App()
@@ -362,7 +362,10 @@ def test_wrap_app_passes_localization_to_clerk_provider():
     component = app.app_wraps[(1, "ClerkProvider")](False)
     assert component is not None
     props = component.render()["props"]
-    assert any('["too_many_requests"]' in prop for prop in props)
+    localization_prop = next(prop for prop in props if prop.startswith("localization:"))
+    assert '["unstable__errors"]' in localization_prop
+    assert '["too_many_requests"]' in localization_prop
+    assert '"Too many sign-in attempts. Try again shortly."' in localization_prop
 
 
 def test_configure_clerk_frontend_versions_updates_field_defaults():

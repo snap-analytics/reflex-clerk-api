@@ -55,10 +55,7 @@ def test_clerk_session_synchronizer_js_contains_reconnect_safe_deps_and_skipcach
     assert "orgId" in js
     assert "sessionId" in js
     assert "userId" in js
-    assert (
-        '[\"signed_in\", userId || \"\", orgId || \"\", sessionId || \"\"].join(\":\")'
-        in js
-    )
+    assert '["signed_in", userId || "", orgId || "", sessionId || ""].join(":")' in js
     assert "[isLoaded, isSignedIn, userId, orgId, sessionId, addEvents, getToken]" in js
     assert "skipCache: true" in js
     assert "isJwtExpired(token)" in js
@@ -267,13 +264,31 @@ def test_clerk_provider_allows_ui_override():
     assert 'ui:"custom-ui"' in props
 
 
+def test_clerk_provider_preserves_localization_error_keys():
+    from reflex_clerk_api.clerk_provider import ClerkProvider
+
+    props = ClerkProvider.create(
+        localization={
+            "unstable__errors": {
+                "too_many_requests": "Too many sign-in attempts. Try again shortly.",
+            }
+        }
+    ).render()["props"]
+
+    assert (
+        'localization:({ ["unstable__errors"] : ({ ["too_many_requests"] : '
+        '"Too many sign-in attempts. Try again shortly." }) })' in props
+    )
+
+
 def test_clerk_provider_defaults_clerk_js_version():
     from reflex_clerk_api.base import CLERK_JS_VERSION, CLERK_UI_VERSION
     from reflex_clerk_api.clerk_provider import ClerkProvider, clerk_provider
 
-    assert f'__internal_clerkJSVersion:"{CLERK_JS_VERSION}"' in ClerkProvider.create().render()[
-        "props"
-    ]
+    assert (
+        f'__internal_clerkJSVersion:"{CLERK_JS_VERSION}"'
+        in ClerkProvider.create().render()["props"]
+    )
     props = clerk_provider(publishable_key="pk_test").render()["props"]
     assert f'__internal_clerkJSVersion:"{CLERK_JS_VERSION}"' in props
     assert f'__internal_clerkUIVersion:"{CLERK_UI_VERSION}"' in props
@@ -283,10 +298,13 @@ def test_clerk_provider_defaults_clerk_js_version():
 def test_clerk_provider_allows_clerk_frontend_version_overrides():
     from reflex_clerk_api.clerk_provider import ClerkProvider, clerk_provider
 
-    assert '__internal_clerkJSVersion:"6.99.0"' in ClerkProvider.create(
-        clerk_js_version="6.99.0",
-        clerk_ui_version="1.99.0",
-    ).render()["props"]
+    assert (
+        '__internal_clerkJSVersion:"6.99.0"'
+        in ClerkProvider.create(
+            clerk_js_version="6.99.0",
+            clerk_ui_version="1.99.0",
+        ).render()["props"]
+    )
     provider_props = clerk_provider(
         publishable_key="pk_test",
         clerk_js_version="6.99.0",
@@ -325,6 +343,26 @@ def test_wrap_app_allows_clerk_frontend_version_overrides():
     props = component.render()["props"]
     assert '__internal_clerkJSVersion:"6.99.0"' in props
     assert '__internal_clerkUIVersion:"1.99.0"' in props
+
+
+def test_wrap_app_passes_localization_to_clerk_provider():
+    from reflex_clerk_api.clerk_provider import wrap_app
+
+    app = rx.App()
+    wrap_app(
+        app,
+        publishable_key="pk_test",
+        localization={
+            "unstable__errors": {
+                "too_many_requests": "Too many sign-in attempts. Try again shortly.",
+            }
+        },
+    )
+
+    component = app.app_wraps[(1, "ClerkProvider")](False)
+    assert component is not None
+    props = component.render()["props"]
+    assert any('["too_many_requests"]' in prop for prop in props)
 
 
 def test_configure_clerk_frontend_versions_updates_field_defaults():

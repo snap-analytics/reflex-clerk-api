@@ -101,6 +101,28 @@ clerk.wrap_app(app, publishable_key=...)
 
 Taking the same arguments as `clerk.clerk_provider`.
 
+### Localization
+
+Pass Clerk localization overrides through `clerk_provider` or `wrap_app`. Error
+messages use Clerk's machine-stable error codes:
+
+```python
+clerk.wrap_app(
+    app,
+    publishable_key=...,
+    localization={
+        "unstable__errors": {
+            "too_many_requests": (
+                "Too many sign-in attempts. Please wait a moment before trying again."
+            ),
+        },
+    },
+)
+```
+
+Localization keys are forwarded unchanged so Clerk-specific names such as
+`unstable__errors` and `too_many_requests` remain intact.
+
 ### Frontend Package Versions
 
 `reflex-clerk-api` pins a compatible Clerk frontend set by default:

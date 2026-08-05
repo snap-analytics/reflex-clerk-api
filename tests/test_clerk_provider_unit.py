@@ -429,3 +429,42 @@ def test_custom_component_reads_clerk_base_library_at_call_time():
         assert "@clerk/react@6.8.0" in CustomUserButton.create()._get_imports()
     finally:
         configure_clerk_frontend_versions(DEFAULT_CLERK_FRONTEND_VERSIONS)
+
+
+def test_on_load_registration_key_survives_process_replacement():
+    """The same key re-derives the same registry id, as a restarted process would."""
+    from reflex_clerk_api.clerk_provider import ClerkState, on_load
+
+    ClerkState._on_load_events = {}
+    first = on_load(rx.noop(), registration_key="/project/[project_id]")
+    ids_after_first = set(ClerkState._on_load_events)
+
+    ClerkState._on_load_events = {}
+    second = on_load(rx.noop(), registration_key="/project/[project_id]")
+
+    assert len(first) == 1
+    assert len(second) == 1
+    assert set(ClerkState._on_load_events) == ids_after_first
+    assert len(ids_after_first) == 1
+
+
+def test_on_load_distinct_registration_keys_get_distinct_ids():
+    """Different routes must not share a registration slot."""
+    from reflex_clerk_api.clerk_provider import ClerkState, on_load
+
+    ClerkState._on_load_events = {}
+    on_load(rx.noop(), registration_key="/project/[project_id]")
+    on_load(rx.noop(), registration_key="/project/[project_id]/billing")
+
+    assert len(ClerkState._on_load_events) == 2
+
+
+def test_on_load_without_registration_key_mints_random_ids():
+    """The default keeps today's behavior: every registration is unique."""
+    from reflex_clerk_api.clerk_provider import ClerkState, on_load
+
+    ClerkState._on_load_events = {}
+    on_load(rx.noop())
+    on_load(rx.noop())
+
+    assert len(ClerkState._on_load_events) == 2

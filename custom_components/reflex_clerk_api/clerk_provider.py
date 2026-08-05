@@ -116,7 +116,12 @@ class ClerkState(rx.State):
     ) -> list[IndividualEventType[()]]:
         on_loads = cls._on_load_events.get(uid, None)
         if on_loads is None:
-            logging.warning("Waited for auth, but no on_load events registered.")
+            logging.warning(
+                "Waited for auth, but no on_load events registered for id %s. "
+                "The id was likely minted by a previous backend process; "
+                "register with a stable registration_key to survive restarts.",
+                uid,
+            )
             return []
         return list(on_loads)
 
@@ -813,14 +818,29 @@ class ClerkProvider(ClerkBase):
         return []
 
 
-def on_load(on_load_events: EventType[()] | None) -> list[IndividualEventType[()]]:
+_ON_LOAD_REGISTRY_NAMESPACE = uuid.UUID("6f9f0a3e-1d0b-4a76-9f65-3f2b8a4c7d21")
+
+
+def on_load(
+    on_load_events: EventType[()] | None,
+    *,
+    registration_key: str | None = None,
+) -> list[IndividualEventType[()]]:
     """Use this to wrap any on_load events that should happen after Clerk has checked authentication.
 
     Args:
         on_load_events: The events to run after authentication is checked.
+        registration_key: Optional stable identifier for this registration
+            (typically the page route). When provided, the registry id is
+            derived from it deterministically, so a browser tab compiled by a
+            previous backend process still resolves its on_load events after a
+            restart or redeploy. Without it a random id is minted, and any tab
+            open across a process replacement sends an id the new process does
+            not know, silently dropping the events. Registering the same key
+            twice replaces the earlier events.
 
     Examples:
-        app.add_page(..., on_load=clerk.on_load(<events>))
+        app.add_page(..., on_load=clerk.on_load(<events>, registration_key=route))
     """
     if on_load_events is None:
         return []
@@ -832,7 +852,11 @@ def on_load(on_load_events: EventType[()] | None) -> list[IndividualEventType[()
     #  Then, the wait_for_auth_check event will return the on_load events once auth_checked is True.
     #  Can't just use a blocking wait_for_auth_check because we are really waiting for the frontend event trigger to run,
     #  so we need to not block that while we wait.
-    uid = uuid.uuid4()
+    uid = (
+        uuid.uuid5(_ON_LOAD_REGISTRY_NAMESPACE, registration_key)
+        if registration_key is not None
+        else uuid.uuid4()
+    )
     ClerkState._set_on_load_events(uid, on_load_list)
     return [ClerkState.wait_for_auth_check(uid)]
 

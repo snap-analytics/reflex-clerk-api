@@ -431,15 +431,17 @@ def test_custom_component_reads_clerk_base_library_at_call_time():
         configure_clerk_frontend_versions(DEFAULT_CLERK_FRONTEND_VERSIONS)
 
 
-def test_on_load_registration_key_survives_process_replacement():
+def test_on_load_registration_key_survives_process_replacement(monkeypatch):
     """The same key re-derives the same registry id, as a restarted process would."""
     from reflex_clerk_api.clerk_provider import ClerkState, on_load
 
-    ClerkState._on_load_events = {}
+    monkeypatch.setattr(ClerkState, "_on_load_events", {})
     first = on_load(rx.noop(), registration_key="/project/[project_id]")
     ids_after_first = set(ClerkState._on_load_events)
 
-    ClerkState._on_load_events = {}
+    # A restarted process starts from an empty registry; the key must re-derive
+    # the same id so a tab compiled by the previous process still resolves.
+    monkeypatch.setattr(ClerkState, "_on_load_events", {})
     second = on_load(rx.noop(), registration_key="/project/[project_id]")
 
     assert len(first) == 1
@@ -448,22 +450,38 @@ def test_on_load_registration_key_survives_process_replacement():
     assert len(ids_after_first) == 1
 
 
-def test_on_load_distinct_registration_keys_get_distinct_ids():
+def test_on_load_same_registration_key_replaces_registered_events(monkeypatch):
+    """Re-registering a key keeps only the latest events, as a hot reload would."""
+    from reflex_clerk_api.clerk_provider import ClerkState, on_load
+
+    monkeypatch.setattr(ClerkState, "_on_load_events", {})
+    stale_event = rx.noop()
+    current_event = rx.noop()
+
+    on_load(stale_event, registration_key="/project/[project_id]")
+    on_load(current_event, registration_key="/project/[project_id]")
+
+    assert len(ClerkState._on_load_events) == 1
+    (registered,) = ClerkState._on_load_events.values()
+    assert registered[0] is current_event
+
+
+def test_on_load_distinct_registration_keys_get_distinct_ids(monkeypatch):
     """Different routes must not share a registration slot."""
     from reflex_clerk_api.clerk_provider import ClerkState, on_load
 
-    ClerkState._on_load_events = {}
+    monkeypatch.setattr(ClerkState, "_on_load_events", {})
     on_load(rx.noop(), registration_key="/project/[project_id]")
     on_load(rx.noop(), registration_key="/project/[project_id]/billing")
 
     assert len(ClerkState._on_load_events) == 2
 
 
-def test_on_load_without_registration_key_mints_random_ids():
+def test_on_load_without_registration_key_mints_random_ids(monkeypatch):
     """The default keeps today's behavior: every registration is unique."""
     from reflex_clerk_api.clerk_provider import ClerkState, on_load
 
-    ClerkState._on_load_events = {}
+    monkeypatch.setattr(ClerkState, "_on_load_events", {})
     on_load(rx.noop())
     on_load(rx.noop())
 
